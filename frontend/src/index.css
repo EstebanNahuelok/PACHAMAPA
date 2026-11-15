@@ -450,3 +450,21 @@ body { color: var(--pm-texto); background: var(--pm-fondo); }
   -webkit-backdrop-filter: saturate(180%) blur(14px);
   backdrop-filter: saturate(180%) blur(14px);
 }
+
+/* ---------- Marca ----------
+   Pachamapa Sans es la tipografia del logotipo: se usa en el nombre y en los titulos grandes. */
+@font-face {
+  font-family: 'Pachamapa Sans';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/PachamapaSans-Bold.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Pachamapa Sans';
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+  src: url('/fonts/PachamapaSans-Black.woff2') format('woff2');
+}
+.pm-marca { font-family: 'Pachamapa Sans', ui-rounded, system-ui, sans-serif; font-weight: 700; letter-spacing: 0; }

@@ -121,8 +121,8 @@ export default function App({ tema, onAlternarTema }: { tema: Tema; onAlternarTe
     <div className="flex h-dvh flex-col">
       <header className="flex h-12 shrink-0 items-center gap-2 bg-orange-800 px-3 text-white">
         <a href="#inicio" aria-label="Ir a la portada" className="flex items-center gap-2">
-          <img src="/favicon.svg" alt="" className="h-7 w-7 rounded-md ring-1 ring-white/30" />
-          <h1 className="text-lg font-bold tracking-tight">Pachamapa</h1>
+          <img src="/marca/pachamapa-pin-inverted-small.svg" alt="" className="h-8 w-auto" />
+          <h1 className="pm-marca text-xl leading-none">Pachamapa</h1>
         </a>
         <span className="hidden text-sm text-orange-100 sm:inline">Clima y ruta en Jujuy, tramo por tramo</span>
         <span className="ml-auto text-xs text-orange-100">

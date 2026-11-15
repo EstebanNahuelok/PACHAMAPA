@@ -115,15 +115,15 @@ export default function Portada({ tema, onAlternarTema }: Props) {
     <div className="min-h-dvh">
       <header ref={escena} className="pm-escena pm-portada-cielo relative overflow-hidden">
         <nav className="relative z-10 mx-auto flex max-w-5xl items-center gap-2 px-4 py-3">
-          <img src="/favicon.svg" alt="" className="h-8 w-8 rounded-lg" />
-          <span className="text-lg font-bold tracking-tight">Pachamapa</span>
+          <img src={tema === 'oscuro' ? '/marca/pachamapa-pin-dark.svg' : '/marca/pachamapa-pin-original.svg'} alt="" className="h-11 w-auto" />
+          <span className="pm-marca text-2xl leading-none text-orange-800">Pachamapa</span>
           <BotonTema tema={tema} onAlternar={onAlternarTema} className="ml-auto bg-white/90 text-stone-700 shadow-sm" />
           <a href="#mapa" className="rounded-full bg-orange-700 px-4 py-2 text-sm font-bold text-white">Abrir el mapa</a>
         </nav>
 
         <div className="relative z-10 mx-auto max-w-5xl px-4 pb-44 pt-8 sm:pb-56 sm:pt-14">
           <p className="text-sm font-bold uppercase tracking-widest text-orange-800">Quebrada de Humahuaca · Salinas Grandes</p>
-          <h1 className="mt-3 max-w-2xl text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl">Clima y estado de la ruta en Jujuy, tramo por tramo</h1>
+          <h1 className="pm-marca mt-3 max-w-2xl text-4xl leading-tight sm:text-5xl">Clima y estado de la ruta en Jujuy, tramo por tramo</h1>
           <p className="mt-4 max-w-xl text-lg text-stone-600">
             En la Quebrada el clima cambia en pocos kilómetros: puede estar despejado en Tilcara y haber neblina cerrada en Volcán. Pachamapa te muestra en un solo mapa qué pasa en cada tramo.
           </p>
@@ -170,7 +170,7 @@ export default function Portada({ tema, onAlternarTema }: Props) {
 
       <main className="mx-auto max-w-5xl px-4">
         <section id="como-funciona" className="scroll-mt-4 py-10">
-          <h2 className="text-2xl font-extrabold tracking-tight">Todo lo que necesitás antes de salir</h2>
+          <h2 className="pm-marca text-2xl">Todo lo que necesitás antes de salir</h2>
           <ul className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {FUNCIONES.map((f) => (
               <li key={f.titulo} className="pm-inclinar" onPointerMove={inclinar} onPointerLeave={enderezar}>
@@ -189,7 +189,7 @@ export default function Portada({ tema, onAlternarTema }: Props) {
         </section>
 
         <section className="py-6">
-          <h2 className="text-2xl font-extrabold tracking-tight">Tres estados, a simple vista</h2>
+          <h2 className="pm-marca text-2xl">Tres estados, a simple vista</h2>
           <p className="mt-1 text-stone-600">Cada tramo se pinta con el peor estado entre el clima, los reportes y el riesgo por lluvia.</p>
           <ul className="mt-5 grid gap-3 sm:grid-cols-3">
             {(['bien', 'atencion', 'problemas'] as const).map((e) => (
@@ -205,7 +205,7 @@ export default function Portada({ tema, onAlternarTema }: Props) {
         </section>
 
         <section className="py-6">
-          <h2 className="text-2xl font-extrabold tracking-tight">Rutas cubiertas</h2>
+          <h2 className="pm-marca text-2xl">Rutas cubiertas</h2>
           <ul className="mt-5 grid gap-3 sm:grid-cols-2">
             {RUTAS.map((r) => (
               <li key={r.ruta} className="flex gap-4 rounded-2xl border border-stone-200 bg-white p-5">
@@ -220,7 +220,7 @@ export default function Portada({ tema, onAlternarTema }: Props) {
         </section>
 
         <section className="my-8 rounded-3xl bg-orange-800 px-6 py-9 text-center text-white">
-          <h2 className="text-2xl font-extrabold tracking-tight">¿Trabajás en la ruta?</h2>
+          <h2 className="pm-marca text-2xl">¿Trabajás en la ruta?</h2>
           <p className="mx-auto mt-2 max-w-xl text-orange-100">Agencias de turismo, transportistas y guías: recibí por WhatsApp las alertas de tus tramos antes de salir.</p>
           <a href="#mapa" className={`${BOTON} mt-6 inline-block bg-white text-orange-800`}>Entrar a Pachamapa</a>
         </section>
