@@ -12,7 +12,7 @@ import Navegacion from './components/Navegacion'
 import { obtenerMetricas, obtenerTramos, registrarVisita } from './lib/api'
 import type { Metricas, ReporteCreado } from './lib/api'
 import { ESTADOS, haceCuanto, hora, textoAlerta } from './lib/formato'
-import { estimar, guardarDatos, leerDatos } from './lib/offline'
+import { estimar, guardarDatos, leerDatos, precargarMapa } from './lib/offline'
 import type { Estado, RespuestaTramos } from './lib/tipos'
 import type { Tema } from './lib/tema'
 
@@ -43,6 +43,8 @@ export default function App({ tema, onAlternarTema }: { tema: Tema; onAlternarTe
   const cargar = useCallback(async () => {
     let nuevos: RespuestaTramos
     try {
+      // Sin red no vale la pena esperar a que el pedido falle.
+      if (!navigator.onLine) throw new Error('sin conexion')
       nuevos = await obtenerTramos()
       // El servidor puede responder sin clima (falla de Open-Meteo): no se pisa lo guardado con una respuesta vacia.
       if (!nuevos.climaDisponible && leerDatos()) throw new Error('sin clima')
@@ -53,7 +55,7 @@ export default function App({ tema, onAlternarTema }: { tema: Tema; onAlternarTe
     } catch {
       // Sin conexion: se sigue con los ultimos datos recibidos, llevados a esta hora con su pronostico.
       const guardados = leerDatos()
-      if (!guardados) return setError('No se pudo conectar con el servidor. Reintentando…')
+      if (!guardados) return setError(navigator.onLine ? 'No se pudo conectar con el servidor. Reintentando…' : 'Sin conexión y todavía no hay datos guardados. Se van a cargar cuando vuelva la señal.')
       nuevos = estimar(guardados)
       setSinSenal(true)
     }
@@ -78,8 +80,12 @@ export default function App({ tema, onAlternarTema }: { tema: Tema; onAlternarTe
     const alVolver = () => document.visibilityState === 'visible' && cargar()
     document.addEventListener('visibilitychange', alVolver)
     window.addEventListener('online', cargar)
+    window.addEventListener('offline', cargar)
+    const precarga = setTimeout(precargarMapa, 5000)
     return () => {
+      clearTimeout(precarga)
       window.removeEventListener('online', cargar)
+      window.removeEventListener('offline', cargar)
       clearInterval(id)
       document.removeEventListener('visibilitychange', alVolver)
     }

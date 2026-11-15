@@ -1,10 +1,24 @@
 // Permite abrir Pachamapa sin señal: guarda la aplicacion y las teselas del mapa ya vistas.
 // Los datos (/api) no pasan por aca: la aplicacion guarda la ultima respuesta y estima con el pronostico.
-const APP = 'pachamapa-app-v1';
+const APP = 'pachamapa-app-v2';
 const MAPA = 'pachamapa-mapa-v1';
 const MAXIMO_TESELAS = 400;
 
-self.addEventListener('install', () => self.skipWaiting());
+// Al instalarse guarda la pagina y sus archivos (JS, CSS, iconos), asi la aplicacion ya abre sin conexion
+// desde la segunda visita aunque en la primera no se haya recorrido nada.
+async function precargar() {
+  const cache = await caches.open(APP);
+  const pagina = await fetch('/', { cache: 'no-store' });
+  if (!pagina.ok) return;
+  const html = await pagina.clone().text();
+  await cache.put('/', pagina);
+  const archivos = [...html.matchAll(/(?:src|href)="(\/[^"]+\.(?:js|css|svg|png|webp|woff2?))"/g)].map((m) => m[1]);
+  await Promise.all(archivos.map((url) => cache.add(url).catch(() => {})));
+}
+
+self.addEventListener('install', (evento) => {
+  evento.waitUntil(precargar().catch(() => {}).then(() => self.skipWaiting()));
+});
 self.addEventListener('activate', (evento) => {
   evento.waitUntil(
     caches.keys()

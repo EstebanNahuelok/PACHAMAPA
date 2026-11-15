@@ -114,3 +114,31 @@ export function estimar(datos: RespuestaTramos, ahora = Date.now()): RespuestaTr
   const tramos = datos.tramos.map((t) => estimarTramo(t, ahora, edad <= VIGENCIA_REPORTES_MS))
   return { ...datos, tramos, alertas: alertasDe(tramos) }
 }
+
+// Guarda de antemano el mapa de fondo de toda la ruta (unas 80 teselas), para que se vea sin conexion
+// aunque no se haya recorrido antes. Lo guarda el service worker al pasar el pedido por el.
+const CLAVE_MAPA = 'pm-mapa-guardado'
+const SEMANA_MS = 7 * 24 * HORA_MS
+const ZONA = { norte: -22.7, sur: -24.22, oeste: -65.92, este: -65.25 }
+
+const columna = (lon: number, z: number) => Math.floor(((lon + 180) / 360) * 2 ** z)
+const fila = (lat: number, z: number) => Math.floor(((1 - Math.asinh(Math.tan((lat * Math.PI) / 180)) / Math.PI) / 2) * 2 ** z)
+
+export async function precargarMapa() {
+  const conexion = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection
+  if (!navigator.onLine || conexion?.saveData || !navigator.serviceWorker?.controller) return
+  if (Date.now() - Number(localStorage.getItem(CLAVE_MAPA) ?? 0) < SEMANA_MS) return
+  const teselas: string[] = []
+  for (let z = 8; z <= 11; z += 1) {
+    for (let x = columna(ZONA.oeste, z); x <= columna(ZONA.este, z); x += 1) {
+      for (let y = fila(ZONA.norte, z); y <= fila(ZONA.sur, z); y += 1) teselas.push(`https://tile.openstreetmap.org/${z}/${x}/${y}.png`)
+    }
+  }
+  try {
+    // De a pocas a la vez, para no cargar el servidor de OpenStreetMap ni la conexion del telefono.
+    for (let i = 0; i < teselas.length; i += 4) await Promise.all(teselas.slice(i, i + 4).map((url) => fetch(url, { mode: 'no-cors' })))
+    localStorage.setItem(CLAVE_MAPA, String(Date.now()))
+  } catch {
+    // Se corto la conexion a mitad de camino: se reintenta la proxima vez que se abra la aplicacion.
+  }
+}

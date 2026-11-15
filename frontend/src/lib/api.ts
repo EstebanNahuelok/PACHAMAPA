@@ -12,7 +12,8 @@ async function pedir<T>(ruta: string, opciones?: RequestInit): Promise<T> {
   return json as T
 }
 
-export const obtenerTramos = () => pedir<RespuestaTramos>('/api/tramos')
+// Con poca señal el pedido puede quedar colgado: pasado este tiempo se usan los datos guardados.
+export const obtenerTramos = () => pedir<RespuestaTramos>('/api/tramos', { signal: AbortSignal.timeout(12000) })
 
 export interface NuevoReporte {
   tipo?: string
