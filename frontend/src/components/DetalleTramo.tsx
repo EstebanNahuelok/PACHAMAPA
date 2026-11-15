@@ -15,7 +15,7 @@ interface Props {
 
 function Dato({ titulo, valor }: { titulo: string; valor: string }) {
   return (
-    <div className="rounded-lg bg-stone-100 px-3 py-2">
+    <div className="pm-tarjeta px-3 py-2">
       <dt className="text-[11px] uppercase tracking-wide text-stone-500">{titulo}</dt>
       <dd className="text-sm font-semibold">{valor}</dd>
     </div>
@@ -50,7 +50,7 @@ export default function DetalleTramo({ tramo, parteOficial, onVolver, onReportar
         </div>
       </div>
 
-      <div className={`mt-3 rounded-lg px-3 py-2 text-sm font-semibold ${estado.fondo} ${estado.texto}`}>
+      <div className={`mt-3 rounded-2xl px-3.5 py-2.5 text-sm font-semibold ${estado.fondo} ${estado.texto}`}>
         <span className="mr-2 inline-block h-2.5 w-2.5 rounded-full" style={{ background: estado.color }} />
         {[estado.etiqueta, ...tramo.motivos].join(' · ')}
       </div>
@@ -58,7 +58,7 @@ export default function DetalleTramo({ tramo, parteOficial, onVolver, onReportar
       {dificultades.length > 0 && (
         <ul className="mt-2 space-y-1.5">
           {dificultades.map((d) => (
-            <li key={d.clave} className="flex items-start gap-2.5 rounded-lg border border-stone-200 px-3 py-2 text-sm">
+            <li key={d.clave} className="flex items-start gap-2.5 pm-tarjeta px-3 py-2.5 text-sm">
               <IconoDificultad dificultad={d} />
               <span className="min-w-0">
                 <span className="block font-semibold">{d.titulo}</span>
@@ -70,7 +70,7 @@ export default function DetalleTramo({ tramo, parteOficial, onVolver, onReportar
       )}
 
       {restriccion && (
-        <div className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+        <div className="mt-2 rounded-2xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-sm text-red-800">
           <p className="font-bold">{restriccion.mensaje}</p>
           <p className="mt-1">
             {restriccion.alternativa?.descripcion ?? 'No hay un desvío cargado para este tramo: esperá la habilitación antes de salir.'}
@@ -91,7 +91,7 @@ export default function DetalleTramo({ tramo, parteOficial, onVolver, onReportar
       )}
 
       {aviso && NIVEL[aviso.estado] > NIVEL[tramo.estado] && (
-        <div className={`mt-2 rounded-lg px-3 py-2 text-sm ${ESTADOS[aviso.estado].fondo} ${ESTADOS[aviso.estado].texto}`}>
+        <div className={`mt-2 rounded-2xl px-3.5 py-2.5 text-sm ${ESTADOS[aviso.estado].fondo} ${ESTADOS[aviso.estado].texto}`}>
           <span className="font-bold">Se espera que empeore {rangoHoras(aviso.desde, aviso.hasta)}:</span> {aviso.motivos.join(' · ').toLowerCase()}
         </div>
       )}
@@ -118,7 +118,7 @@ export default function DetalleTramo({ tramo, parteOficial, onVolver, onReportar
       {riesgo && (
         <>
           <h3 className="mt-3 text-sm font-bold">Riesgo de aludes y crecidas</h3>
-          <div className={`mt-1 rounded-lg px-3 py-2 text-sm ${RIESGOS[riesgo.nivel].clase}`}>
+          <div className={`mt-1 rounded-2xl px-3.5 py-2.5 text-sm ${RIESGOS[riesgo.nivel].clase}`}>
             <span className="font-bold">{RIESGOS[riesgo.nivel].etiqueta}</span> · llovió {mm(riesgo.lluvia24)} en 24 h y {mm(riesgo.lluvia72)} en 72 h · se esperan {mm(riesgo.prevista24)}
           </div>
           <p className="mt-1 text-xs text-stone-500">
@@ -132,7 +132,7 @@ export default function DetalleTramo({ tramo, parteOficial, onVolver, onReportar
           <h3 className="mt-3 text-sm font-bold">Zonas críticas</h3>
           <ul className="mt-1 space-y-2">
             {tramo.zonasCriticas.map((z) => (
-              <li key={z.lugar} className="rounded-lg border border-stone-200 px-3 py-2 text-sm">
+              <li key={z.lugar} className="pm-tarjeta px-3 py-2.5 text-sm">
                 <span className="font-semibold">{z.lugar}</span>
                 <span className="ml-2 rounded bg-stone-200 px-1.5 py-0.5 text-[10px] font-bold uppercase text-stone-700">{z.tipo}</span>
                 <p className="mt-1 text-stone-600">
@@ -146,7 +146,7 @@ export default function DetalleTramo({ tramo, parteOficial, onVolver, onReportar
       )}
 
       {historial && (
-        <p className="mt-3 rounded-lg bg-stone-100 px-3 py-2 text-sm text-stone-700">
+        <p className="pm-tarjeta mt-3 px-3 py-2 text-sm text-stone-700">
           <span className="font-semibold">Últimos {historial.dias} días:</span>{' '}
           {historial.porTipo.map((t) => `${t.cantidad} de ${t.etiqueta.toLowerCase()}`).join(', ')}
           {historial.franjaHabitual && `, sobre todo a la ${historial.franjaHabitual}`}.
@@ -159,7 +159,7 @@ export default function DetalleTramo({ tramo, parteOficial, onVolver, onReportar
       ) : (
         <ul className="mt-1 space-y-2">
           {tramo.reportes.map((r) => (
-            <li key={r.tipo} className="rounded-lg border border-stone-200 px-3 py-2 text-sm">
+            <li key={r.tipo} className="pm-tarjeta px-3 py-2.5 text-sm">
               <div className="flex flex-wrap items-center gap-x-2">
                 <span className="font-semibold">{etiquetaReporte(r.tipo)}</span>
                 {r.confirmado && <span className="rounded bg-red-600 px-1.5 py-0.5 text-[10px] font-bold uppercase text-white">Confirmado</span>}
@@ -176,7 +176,7 @@ export default function DetalleTramo({ tramo, parteOficial, onVolver, onReportar
       )}
 
       {onReportar && (
-        <button type="button" onClick={onReportar} className="mt-4 w-full rounded-lg bg-orange-700 px-4 py-3 font-semibold text-white active:bg-orange-800">
+        <button type="button" onClick={onReportar} className="mt-4 w-full rounded-2xl bg-orange-700 px-4 py-3 font-semibold text-white active:bg-orange-800">
           Reportar en {tramo.nombre}
         </button>
       )}

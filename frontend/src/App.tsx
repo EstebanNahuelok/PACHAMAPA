@@ -134,7 +134,7 @@ export default function App({ tema, onAlternarTema }: { tema: Tema; onAlternarTe
       <main className="flex min-h-0 flex-1 flex-col landscape:flex-row-reverse">
         <div className="relative min-h-0 flex-1">
           <Mapa tramos={tramos} seleccionado={seleccionado} onSeleccionar={seleccionar} />
-          <div className="pointer-events-none absolute left-2 top-2 z-[500] flex gap-3 rounded-full bg-white/90 px-3 py-1.5 text-xs font-medium shadow">
+          <div className="pm-material pointer-events-none absolute left-2 top-2 z-[500] flex gap-3 rounded-full px-3 py-1.5 text-xs font-medium">
             {(['bien', 'atencion', 'problemas'] as const).map((e) => (
               <span key={e} className="flex items-center gap-1">
                 <span className="h-2.5 w-2.5 rounded-full" style={{ background: ESTADOS[e].color }} />
@@ -142,12 +142,12 @@ export default function App({ tema, onAlternarTema }: { tema: Tema; onAlternarTe
               </span>
             ))}
           </div>
-          <div className="absolute left-2 top-11 z-[500] flex overflow-hidden rounded-full bg-white/95 text-xs font-semibold shadow">
+          <div className="pm-material absolute left-2 top-11 z-[500] flex overflow-hidden rounded-full p-0.5 text-xs font-semibold">
             {ADELANTOS.map((h) => (
               <button key={h} type="button" aria-pressed={adelanto === h} onClick={() => {
                 setAdelanto(h)
                 setDesdeVista(Date.now())
-              }} className={`px-3 py-1.5 ${adelanto === h ? 'bg-stone-900 text-white' : 'text-stone-700'}`}>
+              }} className={`rounded-full px-3 py-1 ${adelanto === h ? 'bg-stone-900 text-white shadow' : 'text-stone-700'}`}>
                 {h === 0 ? 'Ahora' : `+${h} h`}
               </button>
             ))}
@@ -168,7 +168,7 @@ export default function App({ tema, onAlternarTema }: { tema: Tema; onAlternarTe
           </button>
         </div>
 
-        <aside ref={panel} className="h-[40dvh] shrink-0 overflow-y-auto border-t border-stone-300 bg-white landscape:h-auto landscape:w-80 landscape:border-r landscape:border-t-0 landscape:lg:w-96">
+        <aside ref={panel} className="h-[40dvh] shrink-0 pm-panel overflow-y-auto border-t border-stone-300 landscape:h-auto landscape:w-80 landscape:border-r landscape:border-t-0 landscape:lg:w-96">
           {sinSenal && datos?.actualizado && (
             <p role="status" className="bg-stone-800 px-4 py-2 text-sm text-white">
               <span className="font-bold">Sin datos nuevos.</span> Lo que ves es una estimación con el pronóstico recibido {haceCuanto(datos.actualizado)}; los reportes pueden estar desactualizados.
@@ -191,8 +191,8 @@ export default function App({ tema, onAlternarTema }: { tema: Tema; onAlternarTe
                   <span className="font-bold text-stone-800">{datos.temporada.nombre}.</span> {datos.temporada.detalle}
                 </p>
               )}
-              <div className="flex items-baseline justify-between px-4 pb-1 pt-3">
-                <h2 className="text-sm font-bold uppercase tracking-wide text-stone-600">{adelanto > 0 ? `Previsto en ${adelanto} h` : 'Estado por tramo'}</h2>
+              <div className="flex items-baseline justify-between px-4 pb-2 pt-4">
+                <h2 className="pm-titulo">{adelanto > 0 ? `Previsto en ${adelanto} h` : 'Estado por tramo'}</h2>
                 {datos && (
                   <span className="text-xs text-stone-500">
                     {cuenta('problemas')} km con problemas · {cuenta('atencion')} km con atención
@@ -205,7 +205,7 @@ export default function App({ tema, onAlternarTema }: { tema: Tema; onAlternarTe
                   {verTodos ? 'Ver solo localidades y avisos' : `Ver los ${tramos.length} tramos de 5 km`}
                 </button>
               )}
-              <div className="m-4 rounded-xl bg-stone-100 p-4">
+              <div className="pm-tarjeta m-3 p-4">
                 <p className="text-sm font-bold">¿Trabajás en la ruta?</p>
                 <p className="mt-0.5 text-sm text-stone-600">Alertas por tramo y horario para agencias, transportistas y guías.</p>
                 <button type="button" onClick={() => setSuscribiendo(true)} disabled={!datos} className="mt-3 w-full rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60">

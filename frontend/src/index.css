@@ -226,8 +226,9 @@ body {
   --pm-sel-fondo: #f0e7db;
   --pm-sel-texto: #1c1917;
   --pm-encabezado: #6f2a12;
-  --pm-mapa-fondo: #1a1512;
-  --pm-mapa-filtro: invert(1) hue-rotate(180deg) sepia(0.25) saturate(0.6) brightness(0.85) contrast(0.92);
+  --pm-mapa-fondo: #3a3129;
+  /* Invertido pero aclarado, para que se distingan rios, lagos, rutas y areas verdes. */
+  --pm-mapa-filtro: invert(0.92) hue-rotate(180deg) sepia(0.15) brightness(1.65) contrast(1.1) saturate(1.2);
   --pm-cielo: #241a2e;
   --pm-cielo-2: #3a2430;
 }
@@ -418,4 +419,34 @@ body { color: var(--pm-texto); background: var(--pm-fondo); }
 
 @media (prefers-reduced-motion: reduce) {
   .pm-efecto * { animation: none !important; }
+}
+
+/* ---------- Panel con tarjetas agrupadas ----------
+   Fondo apenas mas oscuro que las tarjetas, esquinas amplias, bordes finos y sombras suaves. */
+.pm-panel { background: var(--pm-fondo); }
+.pm-tarjeta {
+  background: var(--pm-superficie);
+  border: 1px solid color-mix(in srgb, var(--pm-borde) 75%, transparent);
+  border-radius: 16px;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.04), 0 8px 20px -14px rgb(0 0 0 / 0.25);
+}
+.pm-titulo { display: flex; align-items: center; gap: 8px; padding-left: 4px; font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
+.pm-contador {
+  min-width: 22px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--pm-superficie-3);
+  color: var(--pm-texto-2);
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+}
+.pm-flecha { flex-shrink: 0; color: var(--pm-texto-3); font-size: 22px; line-height: 1; opacity: 0.7; }
+/* Controles sobre el mapa: vidrio esmerilado. */
+.pm-material {
+  background: color-mix(in srgb, var(--pm-superficie) 72%, transparent);
+  border: 1px solid color-mix(in srgb, var(--pm-borde) 60%, transparent);
+  box-shadow: 0 4px 16px -6px rgb(0 0 0 / 0.3);
+  -webkit-backdrop-filter: saturate(180%) blur(14px);
+  backdrop-filter: saturate(180%) blur(14px);
 }

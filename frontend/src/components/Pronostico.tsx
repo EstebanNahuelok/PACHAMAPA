@@ -9,7 +9,7 @@ export default function Pronostico({ pronostico }: { pronostico: DatosPronostico
         <li
           key={h.hora}
           title={[h.descripcion, ...h.motivos].join(' · ')}
-          className={`flex w-12 shrink-0 flex-col items-center rounded-lg px-1 py-1.5 text-xs ${h.estado === 'bien' ? 'bg-stone-100' : ESTADOS[h.estado].fondo}`}
+          className={`flex w-12 shrink-0 flex-col items-center rounded-xl px-1 py-1.5 text-xs ${h.estado === 'bien' ? 'bg-white' : ESTADOS[h.estado].fondo}`}
         >
           <span className="text-stone-500">{hora(h.hora).slice(0, 2)} h</span>
           <IconoClima icono={h.icono} tamano={24} />
