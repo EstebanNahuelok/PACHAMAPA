@@ -1,0 +1,19 @@
+# Blueprint de Render para el backend. El frontend se despliega en Vercel (carpeta frontend/).
+services:
+  - type: web
+    name: pachamapa-api
+    runtime: node
+    plan: free
+    rootDir: backend
+    buildCommand: pnpm install --frozen-lockfile && pnpm build
+    startCommand: node src/index.js
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: 22.20.0
+      - key: DATABASE_URL
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: CORS_ORIGIN
+        sync: false

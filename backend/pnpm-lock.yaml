@@ -23,7 +23,6 @@ importers:
       groq-sdk:
         specifier: ^1.6.0
         version: 1.6.0
-    devDependencies:
       prisma:
         specifier: ^5.22.0
         version: 5.22.0

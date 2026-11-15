@@ -1,5 +1,5 @@
 {
-  "name": "frontend",
+  "name": "pachamapa-frontend",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -25,5 +25,9 @@
     "tailwindcss": "^4.3.5",
     "typescript": "~7.0.2",
     "vite": "^8.3.6"
+  },
+  "packageManager": "pnpm@11.20.0",
+  "engines": {
+    "node": ">=20"
   }
 }
