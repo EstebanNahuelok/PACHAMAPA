@@ -1,10 +1,10 @@
 import { Router } from 'express';
-import { puntoPorId, puntoMasCercano } from '../data/puntos.js';
+import { tramoPorId, tramoMasCercano } from '../data/puntos.js';
 import { TIPOS_REPORTE, MINIMO_PARA_CONFIRMAR } from '../data/tiposReporte.js';
 import { clasificarTexto } from '../services/clasificador.js';
 import { crearReporte, reportesActivos } from '../services/reportes.js';
 import { prisma, dbConfigurada } from '../services/prisma.js';
-import { revisarAlertas } from '../services/alertas.js';
+import { revisarAlertas } from '../services/whatsappAlertas.js';
 
 const router = Router();
 
@@ -44,9 +44,9 @@ router.post('/', requiereBase, limitar, async (req, res, next) => {
     const lat = Number(cuerpo.lat);
     const lon = Number(cuerpo.lon);
 
-    let punto = typeof cuerpo.tramoId === 'string' ? puntoPorId(cuerpo.tramoId) : null;
+    let punto = typeof cuerpo.tramoId === 'string' ? tramoPorId(cuerpo.tramoId) : null;
     if (!punto && cuerpo.lat != null && cuerpo.lon != null && Number.isFinite(lat) && Number.isFinite(lon)) {
-      punto = puntoMasCercano(lat, lon).punto;
+      punto = tramoMasCercano(lat, lon).tramo;
     }
     if (!punto) return res.status(400).json({ error: 'Elegí el tramo donde está pasando.' });
 
@@ -66,7 +66,7 @@ router.post('/', requiereBase, limitar, async (req, res, next) => {
       tipo,
       etiqueta: TIPOS_REPORTE[tipo].etiqueta,
       tramoId: punto.id,
-      tramo: punto.nombre,
+      tramo: `${punto.nombre} (${punto.ruta}, ${punto.referencia})`,
       expiraEn: reporte.expiraEn,
       confirmado: cantidad >= MINIMO_PARA_CONFIRMAR,
       clasificadoPor,

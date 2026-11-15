@@ -17,7 +17,12 @@ interface Props {
 export default function AlertasWhatsApp({ tramos, tramoInicial, onCerrar }: Props) {
   const [telefono, setTelefono] = useState('')
   const [nombre, setNombre] = useState('')
-  const [elegidos, setElegidos] = useState<string[]>(tramoInicial ? [tramoInicial] : [])
+  const localidadDe = (id: string | null) => tramos.find((t) => t.id === id)?.localidad
+  const [elegidos, setElegidos] = useState<string[]>(() => {
+    const localidad = localidadDe(tramoInicial)
+    return localidad ? [localidad] : []
+  })
+  const localidades = [...new Map(tramos.filter((t) => t.localidad).map((t) => [t.localidad as string, t.nombre])).entries()]
   const [nivel, setNivel] = useState<'problemas' | 'atencion'>('problemas')
   const [todoElDia, setTodoElDia] = useState(true)
   const [desdeHora, setDesdeHora] = useState(6)
@@ -64,24 +69,24 @@ export default function AlertasWhatsApp({ tramos, tramoInicial, onCerrar }: Prop
         </div>
       ) : (
         <form onSubmit={enviarFormulario} className="space-y-3">
-          <p className="text-sm text-stone-600">Te avisamos por WhatsApp cuando haya neblina, nieve, hielo, cortes u otros problemas en los tramos que elijas.</p>
+          <p className="text-sm text-stone-600">Te avisamos por WhatsApp cuando haya neblina, nieve, hielo, cortes u otros problemas en las localidades que elijas.</p>
           <input required type="tel" inputMode="tel" minLength={8} maxLength={24} value={telefono} onChange={(e) => setTelefono(e.target.value)} placeholder="Tu WhatsApp (ej. 388 4123456)" aria-label="Número de WhatsApp" className={CAMPO} />
           <input maxLength={80} value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Nombre o empresa (opcional)" aria-label="Nombre o empresa" className={CAMPO} />
 
           <fieldset>
-            <legend className="mb-1.5 text-sm font-semibold">Tramos {elegidos.length === 0 && <span className="font-normal text-stone-500">(sin elegir = todos)</span>}</legend>
+            <legend className="mb-1.5 text-sm font-semibold">Localidades {elegidos.length === 0 && <span className="font-normal text-stone-500">(sin elegir = toda la ruta)</span>}</legend>
             <div className="flex flex-wrap gap-1.5">
-              {tramos.map((t) => {
-                const activo = elegidos.includes(t.id)
+              {localidades.map(([id, nombre]) => {
+                const activo = elegidos.includes(id)
                 return (
                   <button
-                    key={t.id}
+                    key={id}
                     type="button"
                     aria-pressed={activo}
-                    onClick={() => alternar(t.id)}
+                    onClick={() => alternar(id)}
                     className={`rounded-full border-2 px-3 py-1.5 text-sm font-medium ${activo ? 'border-orange-700 bg-orange-700 text-white' : 'border-stone-200 bg-white text-stone-700'}`}
                   >
-                    {t.nombre}
+                    {nombre}
                   </button>
                 )
               })}

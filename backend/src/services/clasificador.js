@@ -13,11 +13,15 @@ Respondé únicamente un JSON con la forma {"tipo": "<uno de los tipos>"} o {"ti
 // Respaldo sin IA: se usa si no hay clave de Groq o si Groq falla.
 const PALABRAS = [
   ['corte', /cort(e|ada|ado|aron)|piquete|bloque|cerrad|no se puede pasar|intransitable/],
-  ['derrumbe', /derrumb|alud|desmoron|piedras|rocas|deslizamiento|barro/],
+  ['derrumbe', /derrumb|alud|desmoron|rocas|deslizamiento/],
+  ['crecida', /crecid|desbord|inundad|anegad|agua (sobre|en) la (ruta|calzada)|baj[oó] el r[ií]o/],
+  ['barro', /barro|lodo|sediment|piedras/],
   ['accidente', /accident|choque|choc[oó]|vuelco|volc[oó]\b|colisi/],
   ['hielo', /hielo|helad|escarcha|congelad|resbalad/],
   ['nevada', /niev|nevad|nevando/],
   ['neblina', /niebla|neblina|bruma|no se ve|poca visibilidad/],
+  ['bache', /bache|pozos?|calzada (rota|deteriorada)|asfalto roto/],
+  ['obras', /obras?|desv[ií]o|banderillero|repaviment/],
   ['fila', /fila|\bcola\b|demora|embotellamiento|atascad|lento/],
 ];
 

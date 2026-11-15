@@ -63,6 +63,8 @@ model AlertaEnviada {
   id            Int         @id @default(autoincrement())
   suscripcionId String      @map("suscripcion_id")
   suscripcion   Suscripcion @relation(fields: [suscripcionId], references: [id], onDelete: Cascade)
+  // Id de la alerta que lo disparo (clave de la situacion)
+  clave         String
   tramoId       String      @map("tramo_id")
   estado        String
   motivos       String

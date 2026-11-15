@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import { randomBytes } from 'node:crypto';
-import { PUNTOS, puntoPorId } from '../data/puntos.js';
+import { TRAMOS, tramoPorId } from '../data/puntos.js';
 import { prisma, dbConfigurada } from '../services/prisma.js';
-import { NIVELES, enlaceBaja, revisarAlertas } from '../services/alertas.js';
+import { NIVELES, enlaceBaja, revisarAlertas } from '../services/whatsappAlertas.js';
 import { enviarWhatsApp, normalizarTelefono, whatsappConfigurado } from '../services/whatsapp.js';
 
 const router = Router();
@@ -33,10 +33,10 @@ router.post('/suscripciones', limitar, async (req, res, next) => {
     const telefono = normalizarTelefono(cuerpo.telefono);
     if (!telefono) return res.status(400).json({ error: 'Escribí tu WhatsApp con código de área. Ejemplo: 388 4123456.' });
 
-    const pedidos = Array.isArray(cuerpo.tramos) ? [...new Set(cuerpo.tramos)].filter((id) => typeof id === 'string' && puntoPorId(id)) : [];
+    const pedidos = Array.isArray(cuerpo.tramos) ? [...new Set(cuerpo.tramos)].filter((id) => typeof id === 'string' && tramoPorId(id)) : [];
     const datos = {
       nombre: typeof cuerpo.nombre === 'string' ? cuerpo.nombre.trim().slice(0, 80) || null : null,
-      tramos: pedidos.length === PUNTOS.length ? [] : pedidos,
+      tramos: pedidos.length === TRAMOS.length ? [] : pedidos,
       nivel: Object.hasOwn(NIVELES, cuerpo.nivel) ? cuerpo.nivel : 'problemas',
       desdeHora: hora(cuerpo.desdeHora, 0),
       hastaHora: hora(cuerpo.hastaHora, 0),
@@ -48,7 +48,7 @@ router.post('/suscripciones', limitar, async (req, res, next) => {
       create: { ...datos, telefono, token: randomBytes(18).toString('base64url') },
     });
 
-    const lugares = datos.tramos.length ? datos.tramos.map((id) => puntoPorId(id).nombre).join(', ') : 'todos los tramos';
+    const lugares = datos.tramos.length ? datos.tramos.map((id) => tramoPorId(id).nombre).join(', ') : 'todos los tramos';
     const horario = datos.desdeHora === datos.hastaHora ? 'a toda hora' : `de ${datos.desdeHora} a ${datos.hastaHora} h`;
     const cuando = datos.nivel === 'problemas' ? 'cuando haya problemas' : 'cuando haya que prestar atención o haya problemas';
     let confirmacion = false;

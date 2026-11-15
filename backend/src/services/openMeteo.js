@@ -1,13 +1,17 @@
-import { PUNTOS } from '../data/puntos.js';
+import { TRAMOS } from '../data/puntos.js';
 
 const URL_BASE = 'https://api.open-meteo.com/v1/forecast';
+// Diez variables por hora: Open-Meteo cuenta cada pedido segun la cantidad de puntos y de variables.
 const VARIABLES = [
-  'temperature_2m', 'apparent_temperature', 'weather_code', 'cloud_cover', 'visibility',
-  'wind_speed_10m', 'wind_gusts_10m', 'precipitation', 'rain', 'snowfall', 'is_day',
+  'temperature_2m', 'apparent_temperature', 'weather_code', 'visibility', 'wind_speed_10m',
+  'wind_gusts_10m', 'precipitation', 'snowfall', 'precipitation_probability', 'is_day',
 ];
-const TTL_MS = 5 * 60 * 1000;
+const HORAS_PASADAS = 72;
+const HORAS_FUTURAS = 24;
+// El pronostico cambia por hora: con un punto cada 5 km no hace falta pedirlo mas seguido.
+const TTL_MS = 15 * 60 * 1000;
 
-let cache = { porId: new Map(), actualizado: null, error: null };
+let cache = { porId: new Map(), horas: new Map(), actualizado: null, error: null };
 let enCurso = null;
 
 const DESCRIPCIONES = {
@@ -33,22 +37,8 @@ function iconoPara({ codigo, esDia, visibilidad, rafagas, viento }) {
   return esDia ? 'sol' : 'luna';
 }
 
-function normalizar(actual) {
-  const codigo = actual.weather_code;
-  const clima = {
-    temperatura: actual.temperature_2m,
-    sensacion: actual.apparent_temperature,
-    codigo,
-    nubosidad: actual.cloud_cover,
-    visibilidad: actual.visibility,
-    viento: actual.wind_speed_10m,
-    rafagas: actual.wind_gusts_10m,
-    precipitacion: actual.precipitation,
-    lluvia: actual.rain,
-    nieve: actual.snowfall,
-    esDia: actual.is_day === 1,
-    medido: new Date(actual.time * 1000).toISOString(),
-  };
+function describir(clima) {
+  const { codigo } = clima;
   const pocaVisibilidad = clima.visibilidad != null && clima.visibilidad < 1000;
   clima.descripcion = DESCRIPCIONES[codigo] ?? 'Sin datos';
   if (pocaVisibilidad && codigo < 45) clima.descripcion = 'Neblina';
@@ -58,27 +48,64 @@ function normalizar(actual) {
   return clima;
 }
 
-async function consultar() {
+// Separa la serie horaria en lluvia ya caida (para el riesgo de aludes), la hora en curso (el clima actual)
+// y el pronostico de las proximas horas.
+export function normalizarHoras(porHora, ahora = Date.now()) {
+  const pasadas = [];
+  const futuras = [];
+  let actual = null;
+  porHora.time.forEach((t, i) => {
+    const hora = new Date(t * 1000).toISOString();
+    const clima = describir({
+      hora,
+      temperatura: porHora.temperature_2m[i],
+      sensacion: porHora.apparent_temperature?.[i],
+      codigo: porHora.weather_code[i],
+      visibilidad: porHora.visibility[i],
+      viento: porHora.wind_speed_10m[i],
+      rafagas: porHora.wind_gusts_10m[i],
+      precipitacion: porHora.precipitation[i] ?? 0,
+      nieve: porHora.snowfall[i] ?? 0,
+      probabilidad: porHora.precipitation_probability[i],
+      esDia: porHora.is_day[i] === 1,
+    });
+    if (t * 1000 > ahora) return futuras.push(clima);
+    pasadas.push({ hora, precipitacion: clima.precipitacion });
+    actual = { ...clima, medido: hora };
+  });
+  return { actual, pasadas, futuras: futuras.slice(0, HORAS_FUTURAS) };
+}
+
+async function pedir() {
   const params = new URLSearchParams({
-    latitude: PUNTOS.map((p) => p.lat).join(','),
-    longitude: PUNTOS.map((p) => p.lon).join(','),
-    elevation: PUNTOS.map((p) => p.altitud).join(','),
-    current: VARIABLES.join(','),
+    latitude: TRAMOS.map((t) => t.lat).join(','),
+    longitude: TRAMOS.map((t) => t.lon).join(','),
+    elevation: TRAMOS.map((t) => t.altitud).join(','),
+    hourly: VARIABLES.join(','),
+    past_hours: HORAS_PASADAS,
+    forecast_hours: HORAS_FUTURAS + 1,
     timeformat: 'unixtime',
     timezone: 'America/Argentina/Jujuy',
   });
-  const res = await fetch(`${URL_BASE}?${params}`, { signal: AbortSignal.timeout(15000) });
+  const res = await fetch(`${URL_BASE}?${params}`, { signal: AbortSignal.timeout(20000) });
   if (!res.ok) throw new Error(`Open-Meteo respondio ${res.status}`);
   const json = await res.json();
   const lista = Array.isArray(json) ? json : [json];
-  if (lista.length !== PUNTOS.length) throw new Error('Open-Meteo devolvio una cantidad inesperada de puntos');
-  return new Map(PUNTOS.map((p, i) => [p.id, normalizar(lista[i].current)]));
+  if (lista.length !== TRAMOS.length) throw new Error('Open-Meteo devolvio una cantidad inesperada de puntos');
+  const series = lista.map((punto) => normalizarHoras(punto.hourly));
+  return {
+    porId: new Map(TRAMOS.flatMap((t, i) => (series[i].actual ? [[t.id, series[i].actual]] : []))),
+    horas: new Map(TRAMOS.map((t, i) => [t.id, series[i]])),
+  };
 }
+
+// Open-Meteo falla cada tanto (cortes, respuestas incompletas): se reintenta una vez antes de darlo por caido.
+const consultar = () => pedir().catch(() => pedir());
 
 export async function actualizarClima() {
   if (!enCurso) {
     enCurso = consultar()
-      .then((porId) => { cache = { porId, actualizado: new Date(), error: null }; })
+      .then((datos) => { cache = { ...datos, actualizado: new Date(), error: null }; })
       .catch((err) => {
         console.error('[clima] no se pudo actualizar:', err.message);
         cache = { ...cache, error: err.message };

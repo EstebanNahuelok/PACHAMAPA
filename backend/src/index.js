@@ -1,11 +1,12 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import compression from 'compression';
 import tramosRouter from './routes/tramos.js';
 import reportesRouter from './routes/reportes.js';
 import traccionRouter from './routes/traccion.js';
 import alertasRouter from './routes/alertas.js';
-import { revisarAlertas } from './services/alertas.js';
+import { revisarAlertas } from './services/whatsappAlertas.js';
 import { iniciarActualizacionAutomatica } from './services/openMeteo.js';
 
 const app = express();
@@ -14,6 +15,7 @@ const origenes = (process.env.CORS_ORIGIN || '').split(',').map((o) => o.trim())
 
 app.set('trust proxy', 1);
 app.use(cors({ origin: origenes.length ? origenes : true }));
+app.use(compression());
 app.use(express.json({ limit: '50kb' }));
 
 app.get('/api/health', (_req, res) => res.json({ ok: true, servicio: 'pachamapa', hora: new Date().toISOString() }));

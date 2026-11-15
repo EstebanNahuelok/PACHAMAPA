@@ -18,6 +18,7 @@ CREATE TABLE "suscripciones" (
 CREATE TABLE "alertas_enviadas" (
     "id" SERIAL NOT NULL,
     "suscripcion_id" TEXT NOT NULL,
+    "clave" TEXT NOT NULL,
     "tramo_id" TEXT NOT NULL,
     "estado" TEXT NOT NULL,
     "motivos" TEXT NOT NULL,
