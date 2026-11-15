@@ -39,3 +39,35 @@ model Interesado {
 
   @@map("lista_espera")
 }
+
+model Suscripcion {
+  id        String   @id @default(cuid())
+  telefono  String   @unique
+  nombre    String?
+  // Vacio = todos los tramos
+  tramos    String[]
+  // Estado minimo que dispara el aviso: "atencion" o "problemas"
+  nivel     String   @default("problemas")
+  // Franja horaria (hora de Jujuy) en la que se avisa; iguales = a toda hora
+  desdeHora Int      @default(0) @map("desde_hora")
+  hastaHora Int      @default(0) @map("hasta_hora")
+  activo    Boolean  @default(true)
+  token     String   @unique
+  creadoEn  DateTime @default(now()) @map("creado_en")
+  alertas   AlertaEnviada[]
+
+  @@map("suscripciones")
+}
+
+model AlertaEnviada {
+  id            Int         @id @default(autoincrement())
+  suscripcionId String      @map("suscripcion_id")
+  suscripcion   Suscripcion @relation(fields: [suscripcionId], references: [id], onDelete: Cascade)
+  tramoId       String      @map("tramo_id")
+  estado        String
+  motivos       String
+  enviadoEn     DateTime    @default(now()) @map("enviado_en")
+
+  @@index([enviadoEn])
+  @@map("alertas_enviadas")
+}

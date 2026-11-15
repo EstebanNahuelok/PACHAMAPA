@@ -35,6 +35,7 @@ export interface Metricas {
   reportes: number
   reportesActivos: number
   listaEspera: number
+  suscriptores: number
 }
 
 export interface Interesado {
@@ -49,6 +50,22 @@ const enviar = <T>(ruta: string, cuerpo: unknown) => pedir<T>(ruta, { method: 'P
 export const enviarReporte = (reporte: NuevoReporte) => enviar<ReporteCreado>('/api/reportes', reporte)
 export const obtenerMetricas = () => pedir<Metricas>('/api/metricas')
 export const sumarListaEspera = (interesado: Interesado) => enviar<{ ok: true }>('/api/lista-espera', interesado)
+
+export interface NuevaSuscripcion {
+  telefono: string
+  nombre?: string
+  tramos: string[]
+  nivel: 'atencion' | 'problemas'
+  desdeHora: number
+  hastaHora: number
+}
+
+export interface SuscripcionCreada {
+  telefono: string
+  confirmacion: boolean
+}
+
+export const suscribirAlertas = (suscripcion: NuevaSuscripcion) => enviar<SuscripcionCreada>('/api/alertas/suscripciones', suscripcion)
 
 export function registrarVisita() {
   let visitante = localStorage.getItem('pm-visitante')

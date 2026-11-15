@@ -14,6 +14,7 @@ En la Quebrada de Humahuaca el clima cambia en pocos kilómetros: puede estar de
 - **Clima automático**: una sola consulta a Open-Meteo trae los 11 puntos a la vez y se renueva cada 5 minutos.
 - **Reportes de la gente** desde la web: neblina, corte de ruta, derrumbe, hielo, nevada, accidente, fila. Cada reporte queda en su tramo, expira solo después de unas horas y, si hay 2 o más del mismo tipo en el mismo tramo, se marca como **confirmado**.
 - **Texto libre**: si la persona elige "Otra cosa" y escribe qué pasa, Groq clasifica el mensaje (con un clasificador por palabras clave como respaldo).
+- **Alertas por WhatsApp**: cada persona elige sus tramos, el horario y si quiere enterarse solo de los problemas o también de los estados de atención; el aviso llega cuando el tramo cambia y se puede dar de baja desde el enlace de cada mensaje.
 - **Pensado para el celular**: se abre en la ruta, sin instalar nada y sin registrarse.
 
 ## Puntos cubiertos
@@ -46,7 +47,7 @@ Los reportes expiran solos: neblina y filas a las 2 horas, accidentes a las 3, h
 
 ## Stack
 
-- **Backend**: Node.js + Express, Prisma + Postgres (Neon), Groq, Open-Meteo.
+- **Backend**: Node.js + Express, Prisma + Postgres (Neon), Groq, Open-Meteo, Twilio (WhatsApp).
 - **Frontend**: React + Vite + TypeScript, Tailwind, Leaflet.
 - **Deploy**: Render (backend) y Vercel (frontend).
 - **Gestor de paquetes**: pnpm.
@@ -91,6 +92,10 @@ En desarrollo el frontend redirige `/api` al backend local, así que no hace fal
 | backend | `GROQ_API_KEY` | Opcional. Clasifica el texto libre de los reportes. |
 | backend | `GROQ_MODEL` | Opcional. Modelo de Groq (por defecto `llama-3.1-8b-instant`). |
 | backend | `CORS_ORIGIN` | Opcional. Orígenes permitidos separados por coma (vacío = todos). |
+| backend | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_WHATSAPP_FROM` | Opcional. Credenciales y número de WhatsApp de Twilio. Sin las tres, las alertas no se envían: solo se escriben en el log. |
+| backend | `PUBLIC_URL` | Opcional. URL pública del backend, para el enlace de baja (en Render se detecta sola). |
+| backend | `FRONTEND_URL` | Opcional. URL del mapa, para incluirla en cada alerta. |
+| backend | `ALERTAS_REPETIR_HORAS` | Opcional. Horas antes de repetir el aviso de un tramo que sigue igual (por defecto 6). |
 | backend | `PORT` | Puerto (por defecto 3001). |
 | frontend | `VITE_API_URL` | URL pública del backend. Se lee **al hacer el build**, no después. |
 
@@ -111,6 +116,8 @@ En desarrollo el frontend redirige `/api` al backend local, así que no hace fal
 | `POST /api/visitas` | Registra una visita. |
 | `GET /api/metricas` | Visitas, visitantes únicos, reportes y anotados en la lista de espera. |
 | `POST /api/lista-espera` | Suma un interesado: `{ nombre, contacto, rubro, mensaje? }`. |
+| `POST /api/alertas/suscripciones` | Alta o cambio de una suscripción: `{ telefono, nombre?, tramos?, nivel?, desdeHora?, hastaHora? }`. Sin `tramos` se avisa por todos; `nivel` es `problemas` (por defecto) o `atencion`. |
+| `GET /api/alertas/baja/:token` | Da de baja una suscripción (es el enlace que viene en cada mensaje). |
 | `GET /api/health` | Estado del servicio. |
 
 ## Tracción y modelo de negocio
@@ -123,7 +130,9 @@ Para medirlo desde el primer día, la aplicación registra visitas, visitantes �
 
 - La visibilidad de Open-Meteo sale de un modelo, no de una estación en la ruta: sirve como alerta, y por eso se complementa con los reportes de la gente.
 - Un reporte se confirma por cantidad de envíos, no por personas distintas; hay un límite de envíos por IP para frenar abusos.
-- WhatsApp (Twilio) quedó fuera de esta versión: la aplicación web es el canal principal.
+- Las alertas se revisan cada 5 minutos y al entrar un reporte. En el plan gratuito de Render el backend se duerme sin visitas, y mientras duerme no se envían alertas.
+- Con el sandbox de Twilio, cada número tiene que mandar primero el mensaje de alta del sandbox para poder recibir alertas. No se verifica que el número sea de quien se suscribe.
+- Los reportes se siguen cargando solo desde la web: WhatsApp se usa para avisar, no para reportar.
 
 ## Equipo
 

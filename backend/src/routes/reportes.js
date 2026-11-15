@@ -4,6 +4,7 @@ import { TIPOS_REPORTE, MINIMO_PARA_CONFIRMAR } from '../data/tiposReporte.js';
 import { clasificarTexto } from '../services/clasificador.js';
 import { crearReporte, reportesActivos } from '../services/reportes.js';
 import { prisma, dbConfigurada } from '../services/prisma.js';
+import { revisarAlertas } from '../services/alertas.js';
 
 const router = Router();
 
@@ -59,6 +60,7 @@ router.post('/', requiereBase, limitar, async (req, res, next) => {
 
     const reporte = await crearReporte({ tipo, tramoId: punto.id, comentario });
     const cantidad = await prisma.reporte.count({ where: { tipo, tramoId: punto.id, expiraEn: { gt: new Date() } } });
+    revisarAlertas();
     res.status(201).json({
       id: reporte.id,
       tipo,

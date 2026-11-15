@@ -95,7 +95,8 @@ export async function obtenerClima() {
   return vencido ? actualizarClima() : cache;
 }
 
-export function iniciarActualizacionAutomatica() {
-  actualizarClima();
-  setInterval(actualizarClima, TTL_MS).unref();
+export function iniciarActualizacionAutomatica(alActualizar) {
+  const ciclo = () => actualizarClima().then(() => alActualizar?.());
+  ciclo();
+  setInterval(ciclo, TTL_MS).unref();
 }

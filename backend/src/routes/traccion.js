@@ -21,14 +21,15 @@ router.post('/visitas', async (req, res, next) => {
 
 router.get('/metricas', async (_req, res, next) => {
   try {
-    const [visitas, visitantes, reportes, reportesActivos, listaEspera] = await Promise.all([
+    const [visitas, visitantes, reportes, reportesActivos, listaEspera, suscriptores] = await Promise.all([
       prisma.visita.count(),
       prisma.visita.findMany({ where: { visitante: { not: null } }, distinct: ['visitante'], select: { visitante: true } }),
       prisma.reporte.count(),
       prisma.reporte.count({ where: { expiraEn: { gt: new Date() } } }),
       prisma.interesado.count(),
+      prisma.suscripcion.count({ where: { activo: true } }),
     ]);
-    res.json({ visitas, visitantes: visitantes.length, reportes, reportesActivos, listaEspera });
+    res.json({ visitas, visitantes: visitantes.length, reportes, reportesActivos, listaEspera, suscriptores });
   } catch (err) {
     next(err);
   }

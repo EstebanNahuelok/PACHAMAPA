@@ -4,6 +4,7 @@ import ListaTramos from './components/ListaTramos'
 import DetalleTramo from './components/DetalleTramo'
 import FormularioReporte from './components/FormularioReporte'
 import ListaEspera from './components/ListaEspera'
+import AlertasWhatsApp from './components/AlertasWhatsApp'
 import { obtenerMetricas, obtenerTramos, registrarVisita } from './lib/api'
 import type { Metricas, ReporteCreado } from './lib/api'
 import { ESTADOS, hora } from './lib/formato'
@@ -18,6 +19,7 @@ export default function App() {
   const [seleccionado, setSeleccionado] = useState<string | null>(null)
   const [reportando, setReportando] = useState(false)
   const [enListaEspera, setEnListaEspera] = useState(false)
+  const [suscribiendo, setSuscribiendo] = useState(false)
   const [aviso, setAviso] = useState<string | null>(null)
   const [metricas, setMetricas] = useState<Metricas | null>(null)
   const panel = useRef<HTMLElement>(null)
@@ -124,12 +126,15 @@ export default function App() {
               <div className="m-4 rounded-xl bg-stone-100 p-4">
                 <p className="text-sm font-bold">¿Trabajás en la ruta?</p>
                 <p className="mt-0.5 text-sm text-stone-600">Alertas por tramo y horario para agencias, transportistas y guías.</p>
-                <button type="button" onClick={() => setEnListaEspera(true)} className="mt-3 w-full rounded-lg bg-stone-900 px-4 py-2.5 text-sm font-semibold text-white">
+                <button type="button" onClick={() => setSuscribiendo(true)} disabled={!datos} className="mt-3 w-full rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60">
+                  Recibir alertas por WhatsApp
+                </button>
+                <button type="button" onClick={() => setEnListaEspera(true)} className="mt-2 w-full rounded-lg bg-stone-900 px-4 py-2.5 text-sm font-semibold text-white">
                   Sumarme a la lista de espera
                 </button>
                 {metricas && (
                   <p className="mt-3 text-center text-xs text-stone-500">
-                    {metricas.visitas} visitas · {metricas.reportes} reportes de la gente · {metricas.listaEspera} en lista de espera
+                    {metricas.visitas} visitas · {metricas.reportes} reportes de la gente · {metricas.suscriptores} con alertas · {metricas.listaEspera} en lista de espera
                   </p>
                 )}
               </div>
@@ -139,6 +144,7 @@ export default function App() {
       </main>
 
       {reportando && <FormularioReporte tramos={tramos} tramoInicial={seleccionado} onCerrar={() => setReportando(false)} onEnviado={alEnviarReporte} />}
+      {suscribiendo && <AlertasWhatsApp tramos={tramos} tramoInicial={seleccionado} onCerrar={() => { setSuscribiendo(false); obtenerMetricas().then(setMetricas, () => {}) }} />}
       {enListaEspera && <ListaEspera onCerrar={() => { setEnListaEspera(false); obtenerMetricas().then(setMetricas, () => {}) }} />}
     </div>
   )
