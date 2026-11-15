@@ -6,6 +6,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#9a3412" />
     <meta name="description" content="Clima y estado de la ruta por tramo en Jujuy: Quebrada de Humahuaca, Cuesta de Lipán y Salinas Grandes." />
+    <script>
+      // Aplica el tema antes de pintar, para que no parpadee.
+      try {
+        var t = localStorage.getItem('pm-tema')
+        if (t !== 'claro' && t !== 'oscuro') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'oscuro' : 'claro'
+        document.documentElement.dataset.tema = t
+      } catch (e) {}
+    </script>
     <title>Pachamapa · Clima y ruta en Jujuy</title>
   </head>
   <body>

@@ -26,6 +26,7 @@ En la Quebrada de Humahuaca el clima cambia en pocos kilómetros: puede estar de
 - **Cortes y alternativas**: si hay un corte o derrumbe reportado, el tramo muestra la restricción, el desvío (solo si tiene un antecedente oficial) y el enlace al parte de Vialidad Nacional.
 - **Patrones**: resumen de los reportes de los últimos 30 días por tramo (qué se reporta y en qué momento del día).
 - **Alertas por WhatsApp**: cada persona elige las localidades, el horario y si quiere enterarse solo de los problemas o también de los estados de atención; el aviso llega cuando aparece una alerta nueva y se puede dar de baja desde el enlace de cada mensaje.
+- **Portada y temas**: una portada que explica la aplicación, un tema claro de tonos cálidos y un tema oscuro; se elige con el botón del encabezado y, si no se eligió, sigue el del teléfono.
 - **Pensado para el celular**: se abre en la ruta, sin instalar nada y sin registrarse.
 
 ## Localidades de referencia

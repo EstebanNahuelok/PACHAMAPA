@@ -6,18 +6,20 @@ import FormularioReporte from './components/FormularioReporte'
 import ListaEspera from './components/ListaEspera'
 import Alertas from './components/Alertas'
 import AlertasWhatsApp from './components/AlertasWhatsApp'
+import BotonTema from './components/BotonTema'
 import Navegacion from './components/Navegacion'
 import { obtenerMetricas, obtenerTramos, registrarVisita } from './lib/api'
 import type { Metricas, ReporteCreado } from './lib/api'
 import { ESTADOS, haceCuanto, hora, textoAlerta } from './lib/formato'
 import { estimar, guardarDatos, leerDatos } from './lib/offline'
 import type { Estado, RespuestaTramos } from './lib/tipos'
+import type { Tema } from './lib/tema'
 
 const INTERVALO_MS = 2 * 60 * 1000
 const ADELANTOS = [0, 3, 6, 12]
 let visitaRegistrada = false
 
-export default function App() {
+export default function App({ tema, onAlternarTema }: { tema: Tema; onAlternarTema: () => void }) {
   const [datos, setDatos] = useState<RespuestaTramos | null>(() => {
     const guardados = leerDatos()
     return guardados && estimar(guardados)
@@ -111,12 +113,15 @@ export default function App() {
   return (
     <div className="flex h-dvh flex-col">
       <header className="flex h-12 shrink-0 items-center gap-2 bg-orange-800 px-3 text-white">
-        <img src="/favicon.svg" alt="" className="h-7 w-7 rounded-md ring-1 ring-white/30" />
-        <h1 className="text-lg font-bold tracking-tight">Pachamapa</h1>
+        <a href="#inicio" aria-label="Ir a la portada" className="flex items-center gap-2">
+          <img src="/favicon.svg" alt="" className="h-7 w-7 rounded-md ring-1 ring-white/30" />
+          <h1 className="text-lg font-bold tracking-tight">Pachamapa</h1>
+        </a>
         <span className="hidden text-sm text-orange-100 sm:inline">Clima y ruta en Jujuy, tramo por tramo</span>
         <span className="ml-auto text-xs text-orange-100">
           {datos?.actualizado ? `${sinSenal ? 'Sin datos nuevos · últimos de las' : 'Actualizado'} ${hora(datos.actualizado)}` : 'Cargando…'}
         </span>
+        <BotonTema tema={tema} onAlternar={onAlternarTema} className="-mr-1 text-white hover:bg-white/15" />
       </header>
 
       <main className="flex min-h-0 flex-1 flex-col landscape:flex-row-reverse">

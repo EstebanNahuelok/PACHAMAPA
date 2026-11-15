@@ -183,7 +183,7 @@ export default function Navegacion({ tramos, sinSenal, origenInicial = GPS, onCe
   const fondo = conProblema ? (actual.estado === 'problemas' ? '#b91c1c' : '#b45309') : '#1c1917'
 
   return (
-    <div className="fixed inset-0 z-[1100] overflow-hidden bg-stone-950 text-white">
+    <div className="pm-fijo fixed inset-0 z-[1100] overflow-hidden bg-stone-950 text-white">
       <MapaNavegacion recorrido={enRuta} posicion={enRuta ? posicion : null} siguiendo={siguiendo} fluido={conAlertasSimuladas} noche={tramoActual?.clima?.esDia === false} onMover={() => setSiguiendo(false)} />
 
       {/* Tarjeta superior, como la de la proxima maniobra: lo que pasa en el tramo que se esta recorriendo. */}

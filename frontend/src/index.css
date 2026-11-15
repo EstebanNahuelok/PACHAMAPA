@@ -9,8 +9,6 @@ body,
 body {
   margin: 0;
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  color: #1c1917;
-  background: #fafaf9;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -156,3 +154,127 @@ body {
 }
 .pm-grande .pm-difs { top: -15px; left: 12px; gap: 4px; }
 .pm-grande .pm-dif { width: 30px; height: 30px; }
+
+/* ---------- Temas ----------
+   Los componentes usan las utilidades de Tailwind de siempre; aca se cambia el color que pinta cada una
+   segun el tema. `.pm-fijo` deja una zona con los colores originales (la navegacion, que ya es oscura). */
+:root,
+.pm-fijo {
+  --pm-superficie: #fff;
+  --pm-superficie-2: #f5f5f4;
+  --pm-superficie-3: #e7e5e4;
+  --pm-borde: #e7e5e4;
+  --pm-borde-2: #d6d3d1;
+  --pm-texto: #1c1917;
+  --pm-texto-2: #57534e;
+  --pm-texto-3: #78716c;
+  --pm-boton: #1c1917;
+  --pm-acento-texto: #9a3412;
+  --pm-rojo-fondo: #fef2f2;
+  --pm-rojo-borde: #fecaca;
+  --pm-rojo-texto: #b91c1c;
+  --pm-ambar-fondo: #fffbeb;
+  --pm-ambar-fondo-2: #fef3c7;
+  --pm-ambar-texto: #92400e;
+  --pm-verde-fondo: #ecfdf5;
+  --pm-verde-texto: #047857;
+  --pm-azul-texto: #1d4ed8;
+  --pm-sel-fondo: #1c1917;
+  --pm-sel-texto: #fff;
+}
+
+/* Claro: mismos colores, con papel calido en lugar de blanco puro para que no encandile. */
+:root {
+  color-scheme: light;
+  --pm-fondo: #f1ece3;
+  --pm-superficie: #faf7f1;
+  --pm-superficie-2: #f0eae0;
+  --pm-superficie-3: #e6dfd3;
+  --pm-borde: #e3dacc;
+  --pm-borde-2: #d3c8b8;
+  --pm-texto: #29241f;
+  --pm-encabezado: #9a3412;
+  --pm-mapa-fondo: #e3ddd2;
+  --pm-mapa-filtro: saturate(0.7) sepia(0.08) brightness(0.98);
+  --pm-cielo: #f6dfc4;
+  --pm-cielo-2: #fbf1e2;
+}
+
+/* Oscuro: la Quebrada de noche. Tierra y adobe en los fondos, terracota y ocre en los acentos. */
+:root[data-tema='oscuro'] {
+  color-scheme: dark;
+  --pm-fondo: #15100e;
+  --pm-superficie: #1f1815;
+  --pm-superficie-2: #2a211c;
+  --pm-superficie-3: #382c25;
+  --pm-borde: #3a2e27;
+  --pm-borde-2: #4d3e35;
+  --pm-texto: #f0e7db;
+  --pm-texto-2: #c2b4a3;
+  --pm-texto-3: #9d8f80;
+  --pm-boton: #54443a;
+  --pm-acento-texto: #f6a66b;
+  --pm-rojo-fondo: #3b1815;
+  --pm-rojo-borde: #7f2a22;
+  --pm-rojo-texto: #fca5a5;
+  --pm-ambar-fondo: #37280f;
+  --pm-ambar-fondo-2: #453213;
+  --pm-ambar-texto: #fcd37a;
+  --pm-verde-fondo: #12302a;
+  --pm-verde-texto: #6ee7b7;
+  --pm-azul-texto: #93c5fd;
+  --pm-sel-fondo: #f0e7db;
+  --pm-sel-texto: #1c1917;
+  --pm-encabezado: #6f2a12;
+  --pm-mapa-fondo: #1a1512;
+  --pm-mapa-filtro: invert(1) hue-rotate(180deg) sepia(0.25) saturate(0.6) brightness(0.85) contrast(0.92);
+  --pm-cielo: #241a2e;
+  --pm-cielo-2: #3a2430;
+}
+
+body { color: var(--pm-texto); background: var(--pm-fondo); }
+.pm-fijo { color-scheme: dark; }
+
+.bg-white { background-color: var(--pm-superficie); }
+.bg-white\/90 { background-color: color-mix(in srgb, var(--pm-superficie) 90%, transparent); }
+.bg-white\/95 { background-color: color-mix(in srgb, var(--pm-superficie) 95%, transparent); }
+.bg-stone-100, .hover\:bg-stone-100:hover { background-color: var(--pm-superficie-2); }
+.bg-stone-200 { background-color: var(--pm-superficie-3); }
+.bg-stone-900 { background-color: var(--pm-boton); }
+.bg-orange-800 { background-color: var(--pm-encabezado); }
+.bg-red-50 { background-color: var(--pm-rojo-fondo); }
+.bg-amber-50 { background-color: var(--pm-ambar-fondo); }
+.bg-amber-100 { background-color: var(--pm-ambar-fondo-2); }
+.bg-emerald-50 { background-color: var(--pm-verde-fondo); }
+.border-stone-200, .divide-stone-200 > * { border-color: var(--pm-borde); }
+.border-stone-300, .border-stone-400 { border-color: var(--pm-borde-2); }
+.border-red-200 { border-color: var(--pm-rojo-borde); }
+.text-stone-800, .text-stone-700 { color: var(--pm-texto); }
+.text-stone-600 { color: var(--pm-texto-2); }
+.text-stone-500 { color: var(--pm-texto-3); }
+.text-orange-800 { color: var(--pm-acento-texto); }
+.text-red-700, .text-red-800 { color: var(--pm-rojo-texto); }
+.text-amber-800, .text-amber-900 { color: var(--pm-ambar-texto); }
+.text-emerald-700 { color: var(--pm-verde-texto); }
+.text-blue-700 { color: var(--pm-azul-texto); }
+/* La navegacion siempre es oscura: ahi las utilidades conservan su color de Tailwind. */
+.pm-fijo .bg-stone-900 { background-color: #1c1917; }
+.pm-fijo .bg-orange-800 { background-color: #9a3412; }
+
+.pm-pildora { background: var(--pm-superficie); color: var(--pm-texto); }
+.pm-problemas .pm-pildora { background: var(--pm-rojo-fondo); }
+.pm-sel .pm-pildora { background: var(--pm-sel-fondo); color: var(--pm-sel-texto); border-color: var(--pm-sel-fondo); }
+.pm-pildora i { background: var(--pm-sel-fondo); color: var(--pm-sel-texto); }
+.pm-sel .pm-pildora i { background: var(--pm-sel-texto); color: var(--pm-sel-fondo); }
+.pm-globo span { color: var(--pm-texto-2); }
+.pm-globo small { color: var(--pm-acento-texto); }
+
+.leaflet-container:not(.pm-nav) { background: var(--pm-mapa-fondo); }
+.leaflet-container:not(.pm-nav) .leaflet-tile-pane { filter: var(--pm-mapa-filtro); }
+.leaflet-popup-content-wrapper, .leaflet-popup-tip { background: var(--pm-superficie); color: var(--pm-texto); }
+.leaflet-bar a, .leaflet-bar a:hover { background-color: var(--pm-superficie); color: var(--pm-texto); border-bottom-color: var(--pm-borde); }
+.leaflet-container .leaflet-control-attribution { background: color-mix(in srgb, var(--pm-superficie) 80%, transparent); color: var(--pm-texto-3); }
+.leaflet-container .leaflet-control-attribution a { color: var(--pm-acento-texto); }
+
+/* Portada */
+.pm-portada-cielo { background: linear-gradient(180deg, var(--pm-cielo) 0%, var(--pm-cielo-2) 55%, var(--pm-fondo) 100%); }
