@@ -7,6 +7,7 @@ import type { Tramo } from '../lib/tipos'
 
 // Lado en que se dibuja la etiqueta de cada punto, para que no se pisen entre vecinos.
 const LADO: Record<string, 'izq' | 'der' | 'arriba'> = {
+  'san-salvador': 'izq',
   volcan: 'izq',
   purmamarca: 'izq',
   tilcara: 'izq',
@@ -59,7 +60,9 @@ export default function Mapa({ tramos, seleccionado, onSeleccionar }: Props) {
       L.polyline(linea, { color: '#ffffff', weight: 8, opacity: 0.9, interactive: false }).addTo(m)
       L.polyline(linea, { color: '#c2410c', weight: 4, opacity: 0.9, interactive: false }).addTo(m)
     }
-    m.fitBounds(LIMITES, { padding: [24, 24] })
+    // En pantallas chicas el encuadre completo queda demasiado lejos: se prioriza que se lean los puntos.
+    if (m.getBoundsZoom(LIMITES, false, L.point(48, 48)) < 8) m.setView([-23.56, -65.52], 8)
+    else m.fitBounds(LIMITES, { padding: [24, 24] })
     const ajustarTamano = () => m.getContainer().classList.toggle('pm-compacto', m.getZoom() <= 8)
     m.on('zoomend', ajustarTamano)
     ajustarTamano()

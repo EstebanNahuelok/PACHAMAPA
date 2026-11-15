@@ -80,7 +80,7 @@ export default function App() {
         </span>
       </header>
 
-      <main className="flex min-h-0 flex-1 flex-col md:flex-row-reverse">
+      <main className="flex min-h-0 flex-1 flex-col landscape:flex-row-reverse">
         <div className="relative min-h-0 flex-1">
           <Mapa tramos={tramos} seleccionado={seleccionado} onSeleccionar={seleccionar} />
           <div className="pointer-events-none absolute left-2 top-2 z-[500] flex gap-3 rounded-full bg-white/90 px-3 py-1.5 text-xs font-medium shadow">
@@ -104,7 +104,7 @@ export default function App() {
           </button>
         </div>
 
-        <aside ref={panel} className="h-[44dvh] shrink-0 overflow-y-auto border-t border-stone-300 bg-white md:h-auto md:w-96 md:border-r md:border-t-0">
+        <aside ref={panel} className="h-[40dvh] shrink-0 overflow-y-auto border-t border-stone-300 bg-white landscape:h-auto landscape:w-80 landscape:border-r landscape:border-t-0 landscape:lg:w-96">
           {(error || datos?.error) && (
             <p className="bg-amber-100 px-4 py-2 text-sm text-amber-900">{error ?? 'El clima puede estar desactualizado.'}</p>
           )}
