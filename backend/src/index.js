@@ -8,6 +8,7 @@ import traccionRouter from './routes/traccion.js';
 import alertasRouter from './routes/alertas.js';
 import { revisarAlertas } from './services/whatsappAlertas.js';
 import { iniciarActualizacionAutomatica } from './services/openMeteo.js';
+import { iniciarNoticias } from './services/noticias.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -33,4 +34,5 @@ app.use((err, _req, res, _next) => {
 app.listen(PORT, () => {
   console.log(`pachamapa backend en http://localhost:${PORT}`);
   iniciarActualizacionAutomatica(revisarAlertas);
+  iniciarNoticias();
 });

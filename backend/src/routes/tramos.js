@@ -7,6 +7,7 @@ import { armarPronostico } from '../services/pronostico.js';
 import { riesgoPorLluvia, temporadaDe } from '../services/riesgo.js';
 import { armarAlertas } from '../services/alertas.js';
 import { calcularTramos } from '../services/tramos.js';
+import { obtenerNoticias } from '../services/noticias.js';
 
 const router = Router();
 const CIERRES = ['corte', 'derrumbe'];
@@ -52,6 +53,7 @@ router.get('/', async (_req, res, next) => {
       parteOficial: PARTE_OFICIAL,
       temporada: temporadaDe(),
       alertas: armarAlertas(tramos),
+      noticias: obtenerNoticias().noticias,
       tramos,
     });
   } catch (err) {

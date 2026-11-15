@@ -5,6 +5,7 @@ import DetalleTramo from './components/DetalleTramo'
 import FormularioReporte from './components/FormularioReporte'
 import ListaEspera from './components/ListaEspera'
 import Alertas from './components/Alertas'
+import Noticias from './components/Noticias'
 import AlertasWhatsApp from './components/AlertasWhatsApp'
 import BotonTema from './components/BotonTema'
 import Navegacion from './components/Navegacion'
@@ -171,10 +172,14 @@ export default function App({ tema, onAlternarTema }: { tema: Tema; onAlternarTe
             <p className="bg-amber-100 px-4 py-2 text-sm text-amber-900">{error ?? 'El clima puede estar desactualizado.'}</p>
           )}
           {tramo ? (
-            <DetalleTramo tramo={tramo} parteOficial={datos?.parteOficial} onVolver={() => seleccionar(null)} onReportar={() => setReportando(true)} />
+            <>
+              <DetalleTramo tramo={tramo} parteOficial={datos?.parteOficial} onVolver={() => seleccionar(null)} onReportar={() => setReportando(true)} />
+              {tramo.localidad && <Noticias titulo={`${tramo.nombre} en los diarios`} noticias={(datos?.noticias ?? []).filter((n) => n.localidad === tramo.localidad)} />}
+            </>
           ) : (
             <>
               <Alertas alertas={datos?.alertas ?? []} onSeleccionar={seleccionar} />
+              <Noticias noticias={datos?.noticias ?? []} />
               {datos?.temporada && (
                 <p className="border-b border-stone-200 px-4 py-2 text-xs text-stone-600">
                   <span className="font-bold text-stone-800">{datos.temporada.nombre}.</span> {datos.temporada.detalle}

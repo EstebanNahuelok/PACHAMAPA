@@ -73,7 +73,22 @@ export interface RespuestaTramos {
   parteOficial: ParteOficial
   temporada: { id: 'lluvias' | 'invierno'; nombre: string; detalle: string } | null
   alertas: Alerta[]
+  noticias?: Noticia[]
   tramos: Tramo[]
+}
+
+export interface Noticia {
+  id: string
+  titulo: string
+  fuente: string
+  fuenteUrl: string | null
+  enlace: string
+  publicado: string
+  tipo: TipoReporte | null
+  etiqueta: string
+  resuelto: boolean
+  localidad: string | null
+  lugar: string | null
 }
 
 export interface HoraPronostico {

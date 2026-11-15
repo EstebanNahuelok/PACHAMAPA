@@ -52,3 +52,9 @@ export async function clasificarTexto(texto) {
   const hallado = PALABRAS.find(([, patron]) => patron.test(minusculas));
   return { tipo: hallado?.[0] ?? null, fuente: 'palabras' };
 }
+
+// Solo palabras clave, sin IA: para clasificar muchos textos seguidos (titulares de noticias).
+export function clasificarPorPalabras(texto) {
+  const minusculas = texto.toLowerCase();
+  return PALABRAS.find(([, patron]) => patron.test(minusculas))?.[0] ?? null;
+}
