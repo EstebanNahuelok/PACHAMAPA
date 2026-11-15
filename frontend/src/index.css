@@ -278,3 +278,56 @@ body { color: var(--pm-texto); background: var(--pm-fondo); }
 
 /* Portada */
 .pm-portada-cielo { background: linear-gradient(180deg, var(--pm-cielo) 0%, var(--pm-cielo-2) 55%, var(--pm-fondo) 100%); }
+
+/* Portada en 3D: solo transformaciones de CSS (las hace la placa de video), sin librerias.
+   --px/--py van de -1 a 1 segun el puntero y --sy es el scroll en px; los pone Portada.tsx. */
+.pm-escena { --px: 0; --py: 0; --sy: 0; perspective: 1100px; }
+.pm-capa {
+  position: absolute;
+  left: -4%;
+  bottom: 0;
+  width: 108%;
+  transform: translate3d(calc(var(--px) * var(--prof) * -1px), calc(var(--py) * var(--prof) * -0.4px + var(--sy) * (36 - var(--prof)) * 0.004px), 0);
+  transition: transform 0.25s ease-out;
+  will-change: transform;
+  animation: pm-subir 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation-delay: calc(var(--orden) * 90ms);
+}
+@keyframes pm-subir {
+  from { opacity: 0; translate: 0 60px; }
+  to { opacity: 1; translate: 0 0; }
+}
+
+/* Tablero flotante del encabezado: un mapa en miniatura con los avisos despegados del fondo. */
+.pm-tablero {
+  transform-style: preserve-3d;
+  transform: rotateX(calc(14deg + var(--py) * -6deg)) rotateY(calc(-22deg + var(--px) * 8deg)) rotateZ(2deg);
+  transition: transform 0.3s ease-out;
+  animation: pm-flotar 7s ease-in-out infinite;
+}
+.pm-tablero > * { transform: translateZ(var(--z, 0px)); }
+@keyframes pm-flotar {
+  0%, 100% { translate: 0 0; }
+  50% { translate: 0 -10px; }
+}
+.pm-ruta-trazo { stroke-dasharray: 520; stroke-dashoffset: 520; animation: pm-trazar 1.8s 0.4s ease-out forwards; }
+@keyframes pm-trazar { to { stroke-dashoffset: 0; } }
+
+/* Tarjetas que se inclinan hacia el puntero; --rx/--ry los pone Portada.tsx. */
+.pm-inclinar { perspective: 800px; }
+.pm-inclinar > * {
+  height: 100%;
+  transform-style: preserve-3d;
+  transform: rotateX(calc(var(--rx, 0) * 1deg)) rotateY(calc(var(--ry, 0) * 1deg));
+  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+}
+.pm-inclinar:hover > * { box-shadow: 0 18px 30px -18px rgb(0 0 0 / 0.45); }
+.pm-inclinar .pm-relieve { transform: translateZ(26px); }
+
+@media (prefers-reduced-motion: reduce) {
+  .pm-capa, .pm-tablero, .pm-ruta-trazo { animation: none; transition: none; }
+  .pm-capa { transform: none; }
+  .pm-tablero { transform: rotateX(14deg) rotateY(-22deg) rotateZ(2deg); }
+  .pm-ruta-trazo { stroke-dashoffset: 0; }
+  .pm-inclinar > * { transform: none; transition: none; }
+}

@@ -1,3 +1,5 @@
+import { useEffect, useRef } from 'react'
+import type { PointerEvent } from 'react'
 import BotonTema from './BotonTema'
 import { ESTADOS } from '../lib/formato'
 import type { Tema } from '../lib/tema'
@@ -51,12 +53,67 @@ const RUTAS = [
   { ruta: 'RN 52', recorrido: 'Purmamarca – Salinas Grandes', detalle: 'Cuesta de Lipán, hasta 4.170 m de altura.' },
 ]
 
+const CERROS = [
+  { d: 'M0 150 180 70 330 130 520 40 700 125 860 60 1040 120 1200 75V260H0z', color: '#7c5a8a', opacidad: 0.55, prof: 6 },
+  { d: 'M0 185 150 120 320 170 480 100 660 165 840 105 1010 160 1200 120V260H0z', color: '#b4533a', opacidad: 0.8, prof: 12 },
+  { d: 'M0 215 170 165 340 205 520 150 700 200 880 155 1050 198 1200 170V260H0z', color: '#d98a3d', opacidad: 0.9, prof: 20 },
+  { d: 'M0 240 200 205 380 232 560 198 760 230 940 204 1200 226V260H0z', color: '#e3b96a', opacidad: 1, prof: 30 },
+]
+
+const AVISOS = [
+  { lugar: 'Humahuaca', dato: '17°', color: '#10b981', arriba: '12%', izquierda: '46%', z: 46 },
+  { lugar: 'Tilcara', dato: 'Derrumbe', color: '#dc2626', arriba: '43%', izquierda: '8%', z: 70 },
+  { lugar: 'Volcán', dato: 'Neblina', color: '#f59e0b', arriba: '70%', izquierda: '40%', z: 54 },
+]
+
+// Inclina la tarjeta hacia el puntero. Escribe variables de CSS directo en el elemento: no vuelve a renderizar.
+function inclinar(e: PointerEvent<HTMLElement>) {
+  if (e.pointerType !== 'mouse') return
+  const caja = e.currentTarget.getBoundingClientRect()
+  e.currentTarget.style.setProperty('--ry', (((e.clientX - caja.left) / caja.width - 0.5) * 10).toFixed(2))
+  e.currentTarget.style.setProperty('--rx', (((e.clientY - caja.top) / caja.height - 0.5) * -10).toFixed(2))
+}
+function enderezar(e: PointerEvent<HTMLElement>) {
+  e.currentTarget.style.setProperty('--rx', '0')
+  e.currentTarget.style.setProperty('--ry', '0')
+}
+
 const BOTON = 'rounded-xl px-6 py-3.5 text-center text-base font-bold shadow-sm'
 
 export default function Portada({ tema, onAlternarTema }: Props) {
+  const escena = useRef<HTMLElement>(null)
+
+  // Profundidad del encabezado: el puntero y el scroll mueven cada capa de cerros a distinta velocidad.
+  useEffect(() => {
+    const el = escena.current
+    if (!el || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    let cuadro = 0
+    const programar = (aplicar: () => void) => {
+      cancelAnimationFrame(cuadro)
+      cuadro = requestAnimationFrame(aplicar)
+    }
+    const alMover = (e: globalThis.PointerEvent) => {
+      if (e.pointerType !== 'mouse') return
+      programar(() => {
+        el.style.setProperty('--px', ((e.clientX / window.innerWidth) * 2 - 1).toFixed(3))
+        el.style.setProperty('--py', ((e.clientY / window.innerHeight) * 2 - 1).toFixed(3))
+      })
+    }
+    const alDesplazar = () => {
+      if (window.scrollY < el.offsetHeight) programar(() => el.style.setProperty('--sy', String(Math.round(window.scrollY))))
+    }
+    window.addEventListener('pointermove', alMover, { passive: true })
+    window.addEventListener('scroll', alDesplazar, { passive: true })
+    return () => {
+      cancelAnimationFrame(cuadro)
+      window.removeEventListener('pointermove', alMover)
+      window.removeEventListener('scroll', alDesplazar)
+    }
+  }, [])
+
   return (
     <div className="min-h-dvh">
-      <header className="pm-portada-cielo relative overflow-hidden">
+      <header ref={escena} className="pm-escena pm-portada-cielo relative overflow-hidden">
         <nav className="relative z-10 mx-auto flex max-w-5xl items-center gap-2 px-4 py-3">
           <img src="/favicon.svg" alt="" className="h-8 w-8 rounded-lg" />
           <span className="text-lg font-bold tracking-tight">Pachamapa</span>
@@ -75,17 +132,40 @@ export default function Portada({ tema, onAlternarTema }: Props) {
             <a href="#como-funciona" className={`${BOTON} border-2 border-stone-300 bg-white/90 text-stone-800`}>Cómo funciona</a>
           </div>
           <p className="mt-3 text-sm text-stone-500">Gratis, sin instalar nada y sin registrarte.</p>
+
+          <div aria-hidden="true" className="pointer-events-none absolute right-6 top-6 hidden h-80 w-64 lg:block">
+            <div className="pm-tablero relative h-full w-full rounded-3xl border border-stone-200 bg-white shadow-2xl">
+              <svg viewBox="0 0 256 320" className="absolute inset-0 h-full w-full" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 70h216M20 130h216M20 190h216M20 250h216M70 20v280M130 20v280M190 20v280" stroke="var(--pm-borde)" strokeWidth="1" />
+                <path className="pm-ruta-trazo" d="M150 22c-22 30 24 52 2 86s-70 30-92 62 30 52 62 70 40 34 34 58" stroke="#10b981" strokeWidth="7" />
+                <path className="pm-ruta-trazo" d="M77 150c-10 12-18 22-17 34" stroke="#dc2626" strokeWidth="7" />
+              </svg>
+              {AVISOS.map((a) => (
+                <span
+                  key={a.lugar}
+                  className="absolute flex items-center gap-1.5 whitespace-nowrap rounded-full border-2 bg-white px-3 py-1.5 text-sm font-bold shadow-lg"
+                  style={{ top: a.arriba, left: a.izquierda, borderColor: a.color, ['--z' as string]: `${a.z}px` }}
+                >
+                  <span className="h-2.5 w-2.5 rounded-full" style={{ background: a.color }} />
+                  {a.lugar} <span className="font-medium text-stone-600">{a.dato}</span>
+                </span>
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* Cerros de la Quebrada: franjas de colores como los de Purmamarca. */}
         <span aria-hidden="true" className="absolute bottom-28 right-[16%] h-11 w-11 rounded-full sm:bottom-36 sm:h-14 sm:w-14" style={{ background: tema === 'oscuro' ? '#f3e7c9' : '#fbbf24', opacity: 0.9 }} />
-        <svg viewBox="0 0 1200 260" preserveAspectRatio="none" aria-hidden="true" className="absolute inset-x-0 bottom-0 h-40 w-full sm:h-52">
-          <path d="M0 150 180 70 330 130 520 40 700 125 860 60 1040 120 1200 75V260H0z" fill="#7c5a8a" opacity="0.55" />
-          <path d="M0 185 150 120 320 170 480 100 660 165 840 105 1010 160 1200 120V260H0z" fill="#b4533a" opacity="0.8" />
-          <path d="M0 215 170 165 340 205 520 150 700 200 880 155 1050 198 1200 170V260H0z" fill="#d98a3d" opacity="0.9" />
-          <path d="M0 240 200 205 380 232 560 198 760 230 940 204 1200 226V260H0z" fill="#e3b96a" />
-          <path d="M0 252C300 236 600 262 900 244S1150 250 1200 246V260H0z" fill="var(--pm-fondo)" />
-        </svg>
+        <div aria-hidden="true" className="absolute inset-x-0 bottom-0 h-40 sm:h-52">
+          {CERROS.map((c, i) => (
+            <svg key={c.color} viewBox="0 0 1200 260" preserveAspectRatio="none" className="pm-capa h-full" style={{ ['--prof' as string]: c.prof, ['--orden' as string]: i }}>
+              <path d={c.d} fill={c.color} opacity={c.opacidad} />
+            </svg>
+          ))}
+          <svg viewBox="0 0 1200 260" preserveAspectRatio="none" className="absolute inset-x-0 bottom-0 h-full w-full">
+            <path d="M0 252C300 236 600 262 900 244S1150 250 1200 246V260H0z" fill="var(--pm-fondo)" />
+          </svg>
+        </div>
       </header>
 
       <main className="mx-auto max-w-5xl px-4">
@@ -93,14 +173,16 @@ export default function Portada({ tema, onAlternarTema }: Props) {
           <h2 className="text-2xl font-extrabold tracking-tight">Todo lo que necesitás antes de salir</h2>
           <ul className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {FUNCIONES.map((f) => (
-              <li key={f.titulo} className="rounded-2xl border border-stone-200 bg-white p-5">
-                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-stone-100 text-orange-800">
+              <li key={f.titulo} className="pm-inclinar" onPointerMove={inclinar} onPointerLeave={enderezar}>
+                <div className="rounded-2xl border border-stone-200 bg-white p-5">
+                <span className="pm-relieve flex h-11 w-11 items-center justify-center rounded-xl bg-stone-100 text-orange-800">
                   <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <path d={f.icono} />
                   </svg>
                 </span>
                 <h3 className="mt-3 text-lg font-bold">{f.titulo}</h3>
                 <p className="mt-1 text-sm leading-relaxed text-stone-600">{f.texto}</p>
+                </div>
               </li>
             ))}
           </ul>
