@@ -1,0 +1,41 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Reporte {
+  id         String   @id @default(cuid())
+  tipo       String
+  tramoId    String   @map("tramo_id")
+  comentario String?
+  canal      String   @default("web")
+  creadoEn   DateTime @default(now()) @map("creado_en")
+  expiraEn   DateTime @map("expira_en")
+
+  @@index([expiraEn])
+  @@map("reportes")
+}
+
+model Visita {
+  id        Int      @id @default(autoincrement())
+  visitante String?
+  creadoEn  DateTime @default(now()) @map("creado_en")
+
+  @@index([visitante])
+  @@map("visitas")
+}
+
+model Interesado {
+  id       Int      @id @default(autoincrement())
+  nombre   String
+  contacto String
+  rubro    String
+  mensaje  String?
+  creadoEn DateTime @default(now()) @map("creado_en")
+
+  @@map("lista_espera")
+}

@@ -1,4 +1,5 @@
 // Calcula el estado de un tramo (bien / atencion / problemas) a partir del clima y los reportes activos.
+import { TIPOS_REPORTE } from '../data/tiposReporte.js';
 const NIVEL = { bien: 0, atencion: 1, problemas: 2 };
 
 export function estadoPorClima(clima) {
@@ -31,4 +32,15 @@ export function estadoPorClima(clima) {
 
 export function peorEstado(a, b) {
   return NIVEL[a] >= NIVEL[b] ? a : b;
+}
+
+export function estadoPorReportes(grupos = []) {
+  let estado = 'bien';
+  const motivos = [];
+  for (const g of grupos) {
+    const grave = TIPOS_REPORTE[g.tipo]?.grave;
+    estado = peorEstado(estado, g.confirmado && grave ? 'problemas' : 'atencion');
+    motivos.push(`Reporte ${g.confirmado ? "confirmado" : "sin confirmar"}: ${g.etiqueta.toLowerCase()}`);
+  }
+  return { estado, motivos };
 }

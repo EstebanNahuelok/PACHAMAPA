@@ -1,1 +1,5 @@
 minimumReleaseAge: 10080
+allowBuilds:
+  '@prisma/client': true
+  '@prisma/engines': true
+  prisma: true
