@@ -3,7 +3,7 @@ export const PUNTOS = [
   { id: 'san-salvador', nombre: 'San Salvador de Jujuy', ruta: 'RN 9', lat: -24.1858, lon: -65.2995, altitud: 1259 },
   { id: 'volcan', nombre: 'Volcán', ruta: 'RN 9', lat: -23.915, lon: -65.466, altitud: 2084 },
   { id: 'tumbaya', nombre: 'Tumbaya', ruta: 'RN 9', lat: -23.857, lon: -65.467, altitud: 2094 },
-  { id: 'purmamarca', nombre: 'Purmamarca', ruta: 'RN 52', lat: -23.747, lon: -65.499, altitud: 2324 },
+  { id: 'purmamarca', nombre: 'Purmamarca', ruta: 'RN 9', lat: -23.747, lon: -65.499, altitud: 2324 },
   { id: 'maimara', nombre: 'Maimará', ruta: 'RN 9', lat: -23.624, lon: -65.408, altitud: 2334 },
   { id: 'tilcara', nombre: 'Tilcara', ruta: 'RN 9', lat: -23.577, lon: -65.395, altitud: 2465 },
   { id: 'uquia', nombre: 'Uquía', ruta: 'RN 9', lat: -23.304, lon: -65.356, altitud: 2818 },
