@@ -1,11 +1,14 @@
+import { readFileSync } from 'node:fs';
+
 // Puntos (tramos) de las rutas de Jujuy. Coordenadas y altitudes aproximadas.
 export const PUNTOS = [
   { id: 'san-salvador', nombre: 'San Salvador de Jujuy', ruta: 'RN 9', lat: -24.1858, lon: -65.2995, altitud: 1259 },
   { id: 'volcan', nombre: 'Volcán', ruta: 'RN 9', lat: -23.915, lon: -65.466, altitud: 2084 },
   { id: 'tumbaya', nombre: 'Tumbaya', ruta: 'RN 9', lat: -23.857, lon: -65.467, altitud: 2094 },
-  { id: 'purmamarca', nombre: 'Purmamarca', ruta: 'RN 9', lat: -23.747, lon: -65.499, altitud: 2324 },
+  { id: 'purmamarca', nombre: 'Purmamarca', ruta: 'RN 52', lat: -23.747, lon: -65.499, altitud: 2324 },
   { id: 'maimara', nombre: 'Maimará', ruta: 'RN 9', lat: -23.624, lon: -65.408, altitud: 2334 },
   { id: 'tilcara', nombre: 'Tilcara', ruta: 'RN 9', lat: -23.577, lon: -65.395, altitud: 2465 },
+  { id: 'huacalera', nombre: 'Huacalera', ruta: 'RN 9', lat: -23.437, lon: -65.35, altitud: 2641 },
   { id: 'uquia', nombre: 'Uquía', ruta: 'RN 9', lat: -23.304, lon: -65.356, altitud: 2818 },
   { id: 'humahuaca', nombre: 'Humahuaca', ruta: 'RN 9', lat: -23.205, lon: -65.349, altitud: 2939 },
   { id: 'abra-pampa', nombre: 'Abra Pampa', ruta: 'RN 9', lat: -22.722, lon: -65.697, altitud: 3484 },
@@ -28,6 +31,23 @@ export function puntoMasCercano(lat, lon) {
   for (const p of PUNTOS) {
     const km = distanciaKm(lat, lon, p.lat, p.lon);
     if (!mejor || km < mejor.km) mejor = { punto: p, km };
+  }
+  return mejor;
+}
+
+// Unidad de analisis: tramos de 5 km generados con scripts/generar-tramos.mjs a partir del trazado.
+// Las localidades de arriba quedan como referencia para nombrarlos.
+export const TRAMOS = JSON.parse(readFileSync(new URL('./tramos.json', import.meta.url), 'utf8'));
+
+// Acepta tambien el id de una localidad (asi se guardaban los reportes antes de dividir en tramos de 5 km).
+export const tramoPorId = (id) => TRAMOS.find((t) => t.id === id) ?? TRAMOS.find((t) => t.localidad === id);
+export const idDeTramo = (id) => tramoPorId(id)?.id ?? id;
+
+export function tramoMasCercano(lat, lon) {
+  let mejor = null;
+  for (const t of TRAMOS) {
+    const km = distanciaKm(lat, lon, t.lat, t.lon);
+    if (!mejor || km < mejor.km) mejor = { tramo: t, km };
   }
   return mejor;
 }

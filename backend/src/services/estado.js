@@ -1,6 +1,6 @@
 // Calcula el estado de un tramo (bien / atencion / problemas) a partir del clima y los reportes activos.
 import { TIPOS_REPORTE } from '../data/tiposReporte.js';
-const NIVEL = { bien: 0, atencion: 1, problemas: 2 };
+export const NIVEL = { bien: 0, atencion: 1, problemas: 2 };
 
 export function estadoPorClima(clima) {
   if (!clima) return { estado: 'bien', motivos: [] };
@@ -25,7 +25,7 @@ export function estadoPorClima(clima) {
   if (rafagas >= 80) subir('problemas', 'Ráfagas muy fuertes');
   else if (rafagas >= 50) subir('atencion', 'Viento fuerte');
 
-  if (temperatura <= 0) subir('atencion', 'Bajo cero: posible hielo');
+  if (temperatura != null && temperatura <= 0) subir('atencion', 'Bajo cero: posible hielo');
 
   return { estado, motivos };
 }

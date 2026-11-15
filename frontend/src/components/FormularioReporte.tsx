@@ -88,7 +88,7 @@ export default function FormularioReporte({ tramos, tramoInicial, onCerrar, onEn
             <select id="reporte-tramo" value={tramoId} onChange={(e) => setTramoId(e.target.value)} className="min-w-0 flex-1 rounded-lg border-2 border-stone-200 bg-white px-3 py-2.5 text-base">
               <option value="">Elegí un tramo…</option>
               {tramos.map((t) => (
-                <option key={t.id} value={t.id}>{t.nombre}</option>
+                <option key={t.id} value={t.id}>{t.ruta} km {t.kmInicio}–{t.kmFin} · {t.nombre}</option>
               ))}
             </select>
             <button type="button" onClick={usarUbicacion} disabled={ubicando} className="shrink-0 rounded-lg border-2 border-stone-200 px-3 text-sm font-semibold text-orange-800 disabled:opacity-60">

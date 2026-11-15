@@ -1,6 +1,6 @@
 # pachamapa
 
-**Clima y estado de la ruta en Jujuy, tramo por tramo.**
+**Dificultades viales y clima en las rutas del norte de Jujuy, tramo por tramo.**
 
 En la Quebrada de Humahuaca el clima cambia en pocos kilómetros: puede estar despejado en Tilcara y haber neblina cerrada en Volcán. Pachamapa muestra en un solo mapa qué pasa en cada tramo de la ruta, combinando el clima automático con los reportes de la gente que está viajando.
 
@@ -8,41 +8,61 @@ En la Quebrada de Humahuaca el clima cambia en pocos kilómetros: puede estar de
 
 ## Qué hace
 
-- **Mapa de Jujuy** con la RN 9 (San Salvador de Jujuy – Abra Pampa) y la RN 52 (Purmamarca – Salinas Grandes) dibujadas.
+- **Mapa de Jujuy** con la RN 9 (San Salvador de Jujuy – Abra Pampa) y la RN 52 (Purmamarca – Salinas Grandes), pintadas tramo por tramo con el color de su estado.
+- **Análisis cada 5 km**: las rutas se dividen en 56 tramos de 5 km; cada uno tiene su clima, pronóstico, riesgo, reportes y alertas. Los tramos vecinos con la misma alerta se muestran como una sola.
+- **Vista a futuro**: el mapa se puede adelantar 3, 6 o 12 horas para ver el estado previsto de toda la ruta.
 - **Clima por tramo**: ícono (sol, nubes, neblina, lluvia, nieve, tormenta, viento), temperatura y **altitud** de cada punto.
 - **Estado de cada tramo**: bien, atención o problemas, con el motivo (visibilidad reducida, nevada, ráfagas, hielo, reportes).
-- **Clima automático**: una sola consulta a Open-Meteo trae los 11 puntos a la vez y se renueva cada 5 minutos.
-- **Reportes de la gente** desde la web: neblina, corte de ruta, derrumbe, hielo, nevada, accidente, fila. Cada reporte queda en su tramo, expira solo después de unas horas y, si hay 2 o más del mismo tipo en el mismo tramo, se marca como **confirmado**.
+- **Clima automático**: una sola consulta a Open-Meteo trae los 56 tramos a la vez y se renueva cada 15 minutos.
+- **Dificultades viales sobre el mapa**: cada tramo muestra pictogramas de lo que complica el camino (derrumbe, agua sobre la calzada, barro o piedras, neblina, hielo, corte, baches, obras); al tocarlos se abre la explicación.
+- **Modo navegación**: mapa en vivo al estilo Android Auto que sigue tu posición. Arriba muestra la alerta del tramo que estás recorriendo y la próxima dificultad; al costado, una barra con el estado de todo el viaje; abajo, la hora de llegada, el tiempo y los kilómetros que faltan. Desde ahí se abre "Camino por delante", se reporta en el tramo actual y se activan los avisos por voz. Lo que muestra de cada tramo es lo previsto para la hora en que vas a pasar. Incluye dos simulaciones para probarlo sin estar en la ruta: una que recorre el camino con los datos reales y una demo fluida de Maimará a Huacalera con alertas simuladas (agua en la calzada, barro, derrumbe, neblina, obras).
+- **Funciona sin señal**: guarda los últimos datos recibidos y, sin conexión, estima el estado de cada tramo con el pronóstico por hora que traían. La aplicación y el mapa ya visto se abren sin conexión.
+- **Reportes de la gente** desde la web: neblina, corte de ruta, derrumbe, crecida o agua en la ruta, barro o piedras, hielo, nevada, accidente, baches, obras o desvío, fila. Cada reporte queda en su tramo, expira solo después de unas horas y, si hay 2 o más del mismo tipo en el mismo tramo, se marca como **confirmado**.
 - **Texto libre**: si la persona elige "Otra cosa" y escribe qué pasa, Groq clasifica el mensaje (con un clasificador por palabras clave como respaldo).
+- **Pronóstico por tramo**: estado previsto hora por hora para las próximas 24 horas, con aviso cuando un tramo va a empeorar ("se espera neblina de 07:00 a 09:00").
+- **Riesgo de aludes y crecidas**: índice bajo, moderado o alto según la lluvia caída en 72 horas y la prevista, más exigente en los tramos con antecedentes.
+- **Zonas críticas**: sectores de cada tramo con antecedentes de aludes, crecidas o derrumbes, cada uno con su fuente.
+- **Alertas dentro de la aplicación**: cualquier reporte activo genera una alerta, esté o no confirmado; lista de alertas vigentes y aviso en pantalla cuando aparece una nueva mientras la aplicación está abierta.
+- **Cortes y alternativas**: si hay un corte o derrumbe reportado, el tramo muestra la restricción, el desvío (solo si tiene un antecedente oficial) y el enlace al parte de Vialidad Nacional.
+- **Patrones**: resumen de los reportes de los últimos 30 días por tramo (qué se reporta y en qué momento del día).
 - **Pensado para el celular**: se abre en la ruta, sin instalar nada y sin registrarse.
 
-## Puntos cubiertos
+## Localidades de referencia
+
+Los tramos de 5 km se nombran según estas localidades (por ejemplo, "Entre Uquía y Humahuaca").
 
 | Tramo | Ruta | Altitud |
 |---|---|---|
 | San Salvador de Jujuy | RN 9 | 1.259 m |
 | Volcán | RN 9 | 2.084 m |
 | Tumbaya | RN 9 | 2.094 m |
-| Purmamarca | RN 9 | 2.324 m |
+| Purmamarca | RN 52 | 2.324 m |
 | Maimará | RN 9 | 2.334 m |
 | Tilcara | RN 9 | 2.465 m |
+| Huacalera | RN 9 | 2.641 m |
 | Uquía | RN 9 | 2.818 m |
 | Humahuaca | RN 9 | 2.939 m |
 | Abra Pampa | RN 9 | 3.484 m |
 | Cuesta de Lipán | RN 52 | 4.170 m |
 | Salinas Grandes | RN 52 | 3.450 m |
 
-Las coordenadas y altitudes son aproximadas y están en `backend/src/data/puntos.js`. Sumar un punto es agregar una línea a ese archivo.
+Las localidades están en `backend/src/data/puntos.js`. Los tramos se generan con `node scripts/generar-tramos.mjs`, que escribe `backend/src/data/tramos.json` y `frontend/src/data/tramos-geo.json`; hay que volver a correrlo si cambia el trazado o se suma una localidad.
 
 ## Cómo se calcula el estado
 
 | Estado | Por clima | Por reportes |
 |---|---|---|
 | Problemas | Visibilidad menor a 200 m, lluvia fuerte, nevada fuerte, tormenta o ráfagas de 80 km/h o más | Evento grave confirmado (2 o más reportes iguales) |
-| Atención | Neblina, lluvia o llovizna, nevada leve, ráfagas de 50 km/h o más, temperatura bajo cero | Cualquier reporte activo sin confirmar, o filas |
+| Atención | Neblina, lluvia o llovizna, nevada leve, ráfagas de 50 km/h o más, temperatura bajo cero, riesgo alto de aludes o crecidas | Cualquier reporte activo sin confirmar, o filas |
 | Bien | Nada de lo anterior | Sin reportes activos |
 
-Los reportes expiran solos: neblina y filas a las 2 horas, accidentes a las 3, hielo y nevadas a las 5, cortes y derrumbes a las 8.
+Los reportes expiran solos: neblina y filas a las 2 horas, accidentes a las 3, hielo, nevadas, crecidas y barro a las 5, cortes y derrumbes a las 8, obras a las 12 y baches a las 24.
+
+## Cómo se calcula el riesgo de aludes y crecidas
+
+Se suma la lluvia de las últimas 24 horas, la mitad de la de los dos días anteriores y la prevista para las próximas 24 horas (datos de Open-Meteo). En tramos con zonas críticas el riesgo es moderado desde 10 mm y alto desde 25 mm, o si se espera una hora de 10 mm o más; en el resto, desde 25 y 50 mm (o una hora de 20 mm). Los umbrales están en `backend/src/services/riesgo.js` y son orientativos: hay que calibrarlos con el historial de cortes.
+
+Las zonas críticas están en `backend/src/data/zonasCriticas.js` y los desvíos en `backend/src/data/alternativas.js`.
 
 ## Stack
 
@@ -55,7 +75,7 @@ Los reportes expiran solos: neblina y filas a las 2 horas, accidentes a las 3, h
 pachamapa/
 ├── backend/            API Express, Prisma y servicios (clima, reportes, clasificador)
 ├── frontend/           Aplicación web (mapa, lista de tramos, formulario de reportes)
-├── scripts/            Script que generó el trazado de las rutas
+├── scripts/            Scripts que generan el trazado de las rutas y los tramos de 5 km
 ├── docker-compose.yml  Postgres local para desarrollo
 └── render.yaml         Configuración del backend en Render
 ```
@@ -74,6 +94,7 @@ pnpm install
 cp .env.example .env        # DATABASE_URL y, opcional, GROQ_API_KEY
 pnpm prisma migrate deploy  # crea las tablas
 pnpm dev                    # http://localhost:3001
+pnpm test                   # tests del pronóstico, el riesgo y las alertas
 
 # 3. Frontend (en otra terminal)
 cd frontend
@@ -105,7 +126,7 @@ En desarrollo el frontend redirige `/api` al backend local, así que no hace fal
 
 | Método y ruta | Descripción |
 |---|---|
-| `GET /api/tramos` | Clima, estado, motivos y reportes activos de cada tramo. |
+| `GET /api/tramos` | Clima, estado, motivos, reportes activos, pronóstico, riesgo, zonas críticas, restricción e historial de cada tramo, más la lista de alertas. |
 | `POST /api/reportes` | Crea un reporte: `{ tipo?, tramoId? , lat?, lon?, comentario? }`. Sin `tipo` se clasifica el comentario; sin `tramoId` se usa el punto más cercano a `lat`/`lon`. |
 | `GET /api/reportes` | Reportes activos. |
 | `POST /api/visitas` | Registra una visita. |
@@ -123,6 +144,16 @@ Para medirlo desde el primer día, la aplicación registra visitas, visitantes �
 
 - La visibilidad de Open-Meteo sale de un modelo, no de una estación en la ruta: sirve como alerta, y por eso se complementa con los reportes de la gente.
 - Un reporte se confirma por cantidad de envíos, no por personas distintas; hay un límite de envíos por IP para frenar abusos.
+- El riesgo de aludes y crecidas es una estimación por lluvia, no una predicción del evento, y sus umbrales no están calibrados.
+- Las zonas críticas salen de noticias y publicaciones, no de un relevamiento oficial; falta validarlas con Vialidad y Defensa Civil.
+- Las alertas solo se ven con la aplicación abierta: no hay notificaciones push.
+- Sin señal no se pueden enviar reportes, y la estimación solo cubre las 24 horas del último pronóstico recibido.
+- El modo navegación calcula las llegadas con la velocidad del GPS o, si no la hay, suponiendo 60 km/h.
+- Las dificultades se ubican en su tramo de 5 km, no en el kilómetro exacto. Los kilómetros se cuentan desde San Salvador de Jujuy (RN 9) y desde el empalme (RN 52): no son los mojones oficiales.
+- El modelo de clima tiene una resolución de varios kilómetros: dos tramos vecinos suelen diferir por la altitud más que por el clima.
+- El mapa de navegación queda siempre con el norte arriba; no gira según el rumbo.
+- La API gratuita de Open-Meteo es para uso no comercial y tiene un límite diario de consultas; para el plan pago hay que contratar su API comercial.
+- El parte de Vialidad Nacional se enlaza, pero no se lee automáticamente; los cortes salen de los reportes de la gente.
 - WhatsApp (Twilio) quedó fuera de esta versión: la aplicación web es el canal principal.
 
 ## Equipo

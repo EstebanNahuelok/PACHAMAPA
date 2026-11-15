@@ -8,7 +8,7 @@ interface Props {
 
 export default function Modal({ titulo, onCerrar, children }: Props) {
   return (
-    <div className="fixed inset-0 z-[1000] flex items-end justify-center bg-black/50 sm:items-center" onClick={onCerrar}>
+    <div className="fixed inset-0 z-[1200] flex items-end justify-center bg-black/50 sm:items-center" onClick={onCerrar}>
       <div
         role="dialog"
         aria-modal="true"

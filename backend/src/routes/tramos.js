@@ -1,28 +1,65 @@
 import { Router } from 'express';
-import { PUNTOS } from '../data/puntos.js';
+import { TRAMOS } from '../data/puntos.js';
+import { zonasDe, esSensibleALluvia } from '../data/zonasCriticas.js';
+import { alternativaDe, PARTE_OFICIAL } from '../data/alternativas.js';
 import { obtenerClima } from '../services/openMeteo.js';
 import { estadoPorClima, estadoPorReportes, peorEstado } from '../services/estado.js';
-import { gruposActivosPorTramo } from '../services/reportes.js';
+import { gruposActivosPorTramo, historialPorTramo } from '../services/reportes.js';
+import { armarPronostico } from '../services/pronostico.js';
+import { riesgoPorLluvia, temporadaDe } from '../services/riesgo.js';
+import { armarAlertas } from '../services/alertas.js';
 
 const router = Router();
+const CIERRES = ['corte', 'derrumbe'];
+
+function restriccionDe(punto, reportes) {
+  const grupo = reportes.find((g) => CIERRES.includes(g.tipo) && g.confirmado) ?? reportes.find((g) => CIERRES.includes(g.tipo));
+  if (!grupo) return null;
+  return {
+    tipo: grupo.tipo,
+    confirmado: grupo.confirmado,
+    mensaje: `${grupo.etiqueta} ${grupo.confirmado ? 'confirmado' : 'reportado, sin confirmar'}`,
+    alternativa: alternativaDe(punto.localidad),
+  };
+}
+
+export function armarTramo(punto, { clima = null, serie = null, reportes = [], historial = null }) {
+  const zonasCriticas = zonasDe(punto.localidad);
+  const riesgo = serie ? riesgoPorLluvia(serie, esSensibleALluvia(zonasCriticas)) : null;
+  const porClima = estadoPorClima(clima);
+  const porReportes = estadoPorReportes(reportes);
+  const porRiesgo = riesgo?.nivel === 'alto' ? { estado: 'atencion', motivos: ['Riesgo de aludes o crecidas por lluvia'] } : { estado: 'bien', motivos: [] };
+  return {
+    ...punto,
+    clima,
+    estado: peorEstado(peorEstado(porClima.estado, porReportes.estado), porRiesgo.estado),
+    motivos: [...porReportes.motivos, ...porClima.motivos, ...porRiesgo.motivos],
+    reportes,
+    estadoReportes: porReportes,
+    pronostico: serie ? armarPronostico(serie.futuras) : null,
+    riesgo,
+    zonasCriticas,
+    restriccion: restriccionDe(punto, reportes),
+    historial,
+  };
+}
 
 router.get('/', async (_req, res, next) => {
   try {
-    const [{ porId, actualizado, error }, { porTramo, disponible }] = await Promise.all([obtenerClima(), gruposActivosPorTramo()]);
-    const tramos = PUNTOS.map((punto) => {
-      const clima = porId.get(punto.id) ?? null;
-      const reportes = porTramo.get(punto.id) ?? [];
-      const porClima = estadoPorClima(clima);
-      const porReportes = estadoPorReportes(reportes);
-      return {
-        ...punto,
-        clima,
-        estado: peorEstado(porClima.estado, porReportes.estado),
-        motivos: [...porReportes.motivos, ...porClima.motivos],
-        reportes,
-      };
+    const [{ porId, horas, actualizado, error }, { porTramo, disponible }, historial] = await Promise.all([obtenerClima(), gruposActivosPorTramo(), historialPorTramo()]);
+    const tramos = TRAMOS.map((punto) =>
+      armarTramo(punto, { clima: porId.get(punto.id), serie: horas.get(punto.id), reportes: porTramo.get(punto.id), historial: historial.get(punto.id) }),
+    );
+    res.json({
+      actualizado,
+      climaDisponible: porId.size > 0,
+      reportesDisponibles: disponible,
+      error: error ? 'No se pudo actualizar el clima' : null,
+      parteOficial: PARTE_OFICIAL,
+      temporada: temporadaDe(),
+      alertas: armarAlertas(tramos),
+      tramos,
     });
-    res.json({ actualizado, climaDisponible: porId.size > 0, reportesDisponibles: disponible, error: error ? 'No se pudo actualizar el clima' : null, tramos });
   } catch (err) {
     next(err);
   }

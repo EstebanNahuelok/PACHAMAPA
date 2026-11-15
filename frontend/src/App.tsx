@@ -1,34 +1,65 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Mapa from './components/Mapa'
 import ListaTramos from './components/ListaTramos'
 import DetalleTramo from './components/DetalleTramo'
 import FormularioReporte from './components/FormularioReporte'
 import ListaEspera from './components/ListaEspera'
+import Alertas from './components/Alertas'
+import Navegacion from './components/Navegacion'
 import { obtenerMetricas, obtenerTramos, registrarVisita } from './lib/api'
 import type { Metricas, ReporteCreado } from './lib/api'
-import { ESTADOS, hora } from './lib/formato'
+import { ESTADOS, haceCuanto, hora, textoAlerta } from './lib/formato'
+import { estimar, guardarDatos, leerDatos } from './lib/offline'
 import type { Estado, RespuestaTramos } from './lib/tipos'
 
 const INTERVALO_MS = 2 * 60 * 1000
+const ADELANTOS = [0, 3, 6, 12]
 let visitaRegistrada = false
 
 export default function App() {
-  const [datos, setDatos] = useState<RespuestaTramos | null>(null)
+  const [datos, setDatos] = useState<RespuestaTramos | null>(() => {
+    const guardados = leerDatos()
+    return guardados && estimar(guardados)
+  })
+  const [sinSenal, setSinSenal] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [seleccionado, setSeleccionado] = useState<string | null>(null)
   const [reportando, setReportando] = useState(false)
+  const [navegando, setNavegando] = useState(false)
+  const [verTodos, setVerTodos] = useState(false)
+  const [adelanto, setAdelanto] = useState(0)
+  const [desdeVista, setDesdeVista] = useState(0)
   const [enListaEspera, setEnListaEspera] = useState(false)
   const [aviso, setAviso] = useState<string | null>(null)
   const [metricas, setMetricas] = useState<Metricas | null>(null)
   const panel = useRef<HTMLElement>(null)
+  const alertasVistas = useRef<Set<string> | null>(null)
 
   const cargar = useCallback(async () => {
+    let nuevos: RespuestaTramos
     try {
-      setDatos(await obtenerTramos())
+      nuevos = await obtenerTramos()
+      // El servidor puede responder sin clima (falla de Open-Meteo): no se pisa lo guardado con una respuesta vacia.
+      if (!nuevos.climaDisponible && leerDatos()) throw new Error('sin clima')
+      if (nuevos.climaDisponible) guardarDatos(nuevos)
+      setSinSenal(false)
       setError(null)
       obtenerMetricas().then(setMetricas, () => {})
     } catch {
-      setError('No se pudo conectar con el servidor. Reintentando…')
+      // Sin conexion: se sigue con los ultimos datos recibidos, llevados a esta hora con su pronostico.
+      const guardados = leerDatos()
+      if (!guardados) return setError('No se pudo conectar con el servidor. Reintentando…')
+      nuevos = estimar(guardados)
+      setSinSenal(true)
+    }
+    setDatos(nuevos)
+    // Avisa solo lo que aparece mientras la aplicacion esta abierta; la primera carga ya se ve en la lista.
+    const vistas = alertasVistas.current
+    const nuevas = nuevos.alertas.filter((a) => vistas && !vistas.has(a.id))
+    alertasVistas.current = new Set(nuevos.alertas.map((a) => a.id))
+    if (nuevas.length > 0) {
+      setAviso(`Alerta nueva en ${nuevas[0].tramo}: ${textoAlerta(nuevas[0])}${nuevas.length > 1 ? ` (y ${nuevas.length - 1} más)` : ''}`)
+      navigator.vibrate?.(200)
     }
   }, [])
 
@@ -41,15 +72,21 @@ export default function App() {
     const id = setInterval(cargar, INTERVALO_MS)
     const alVolver = () => document.visibilityState === 'visible' && cargar()
     document.addEventListener('visibilitychange', alVolver)
+    window.addEventListener('online', cargar)
     return () => {
+      window.removeEventListener('online', cargar)
       clearInterval(id)
       document.removeEventListener('visibilitychange', alVolver)
     }
   }, [cargar])
 
-  const tramos = datos?.tramos ?? []
+  // Con una hora elegida, el mapa y la lista muestran lo previsto para ese momento en lugar de lo actual.
+  const vista = useMemo(() => (datos && adelanto > 0 ? estimar(datos, desdeVista + adelanto * 60 * 60 * 1000) : datos), [datos, adelanto, desdeVista])
+  const tramos = vista?.tramos ?? []
   const tramo = tramos.find((t) => t.id === seleccionado)
-  const cuenta = (estado: Estado) => tramos.filter((t) => t.estado === estado).length
+  const cuenta = (estado: Estado) => tramos.filter((t) => t.estado === estado).length * 5
+  // Con un tramo cada 5 km la lista completa es larga: van las localidades y los tramos con algo para avisar.
+  const enLista = verTodos ? tramos : tramos.filter((t) => t.localidad || t.estado !== 'bien')
 
   const seleccionar = (id: string | null) => {
     setSeleccionado(id)
@@ -58,7 +95,7 @@ export default function App() {
 
   useEffect(() => {
     if (!aviso) return
-    const id = setTimeout(() => setAviso(null), 5000)
+    const id = setTimeout(() => setAviso(null), 8000)
     return () => clearTimeout(id)
   }, [aviso])
 
@@ -76,7 +113,7 @@ export default function App() {
         <h1 className="text-lg font-bold tracking-tight">Pachamapa</h1>
         <span className="hidden text-sm text-orange-100 sm:inline">Clima y ruta en Jujuy, tramo por tramo</span>
         <span className="ml-auto text-xs text-orange-100">
-          {datos?.actualizado ? `Actualizado ${hora(datos.actualizado)}` : 'Cargando…'}
+          {datos?.actualizado ? `${sinSenal ? 'Sin datos nuevos · últimos de las' : 'Actualizado'} ${hora(datos.actualizado)}` : 'Cargando…'}
         </span>
       </header>
 
@@ -91,13 +128,26 @@ export default function App() {
               </span>
             ))}
           </div>
+          <div className="absolute left-2 top-11 z-[500] flex overflow-hidden rounded-full bg-white/95 text-xs font-semibold shadow">
+            {ADELANTOS.map((h) => (
+              <button key={h} type="button" aria-pressed={adelanto === h} onClick={() => {
+                setAdelanto(h)
+                setDesdeVista(Date.now())
+              }} className={`px-3 py-1.5 ${adelanto === h ? 'bg-stone-900 text-white' : 'text-stone-700'}`}>
+                {h === 0 ? 'Ahora' : `+${h} h`}
+              </button>
+            ))}
+          </div>
           {aviso && (
             <p role="status" className="absolute inset-x-2 top-12 z-[500] mx-auto max-w-md rounded-lg bg-stone-900 px-4 py-3 text-center text-sm font-medium text-white shadow-lg">{aviso}</p>
           )}
+          <button type="button" onClick={() => setNavegando(true)} disabled={!datos} className="absolute bottom-7 left-3 z-[500] rounded-full bg-stone-900 px-5 py-3 text-base font-bold text-white shadow-lg ring-2 ring-white disabled:opacity-60">
+            Navegar
+          </button>
           <button
             type="button"
             onClick={() => setReportando(true)}
-            disabled={!datos}
+            disabled={!datos || sinSenal}
             className="absolute bottom-7 right-3 z-[500] flex items-center gap-1.5 rounded-full bg-orange-700 py-3 pl-4 pr-5 text-base font-bold text-white shadow-lg ring-2 ring-white active:bg-orange-800 disabled:opacity-60"
           >
             <span className="text-xl leading-none">+</span> Reportar
@@ -105,22 +155,38 @@ export default function App() {
         </div>
 
         <aside ref={panel} className="h-[40dvh] shrink-0 overflow-y-auto border-t border-stone-300 bg-white landscape:h-auto landscape:w-80 landscape:border-r landscape:border-t-0 landscape:lg:w-96">
-          {(error || datos?.error) && (
+          {sinSenal && datos?.actualizado && (
+            <p role="status" className="bg-stone-800 px-4 py-2 text-sm text-white">
+              <span className="font-bold">Sin datos nuevos.</span> Lo que ves es una estimación con el pronóstico recibido {haceCuanto(datos.actualizado)}; los reportes pueden estar desactualizados.
+            </p>
+          )}
+          {!sinSenal && (error || datos?.error) && (
             <p className="bg-amber-100 px-4 py-2 text-sm text-amber-900">{error ?? 'El clima puede estar desactualizado.'}</p>
           )}
           {tramo ? (
-            <DetalleTramo tramo={tramo} onVolver={() => seleccionar(null)} onReportar={() => setReportando(true)} />
+            <DetalleTramo tramo={tramo} parteOficial={datos?.parteOficial} onVolver={() => seleccionar(null)} onReportar={() => setReportando(true)} />
           ) : (
             <>
+              <Alertas alertas={datos?.alertas ?? []} onSeleccionar={seleccionar} />
+              {datos?.temporada && (
+                <p className="border-b border-stone-200 px-4 py-2 text-xs text-stone-600">
+                  <span className="font-bold text-stone-800">{datos.temporada.nombre}.</span> {datos.temporada.detalle}
+                </p>
+              )}
               <div className="flex items-baseline justify-between px-4 pb-1 pt-3">
-                <h2 className="text-sm font-bold uppercase tracking-wide text-stone-600">Estado por tramo</h2>
+                <h2 className="text-sm font-bold uppercase tracking-wide text-stone-600">{adelanto > 0 ? `Previsto en ${adelanto} h` : 'Estado por tramo'}</h2>
                 {datos && (
                   <span className="text-xs text-stone-500">
-                    {cuenta('problemas')} con problemas · {cuenta('atencion')} con atención
+                    {cuenta('problemas')} km con problemas · {cuenta('atencion')} km con atención
                   </span>
                 )}
               </div>
-              {datos ? <ListaTramos tramos={tramos} onSeleccionar={seleccionar} /> : !error && <p className="px-4 py-6 text-sm text-stone-500">Consultando el clima de cada tramo…</p>}
+              {datos ? <ListaTramos tramos={enLista} onSeleccionar={seleccionar} /> : !error && <p className="px-4 py-6 text-sm text-stone-500">Consultando el clima de cada tramo…</p>}
+              {datos && (
+                <button type="button" onClick={() => setVerTodos(!verTodos)} className="mx-4 mt-3 text-sm font-medium text-orange-800 hover:underline">
+                  {verTodos ? 'Ver solo localidades y avisos' : `Ver los ${tramos.length} tramos de 5 km`}
+                </button>
+              )}
               <div className="m-4 rounded-xl bg-stone-100 p-4">
                 <p className="text-sm font-bold">¿Trabajás en la ruta?</p>
                 <p className="mt-0.5 text-sm text-stone-600">Alertas por tramo y horario para agencias, transportistas y guías.</p>
@@ -138,6 +204,18 @@ export default function App() {
         </aside>
       </main>
 
+      {navegando && (
+        <Navegacion
+          tramos={datos?.tramos ?? []}
+          sinSenal={sinSenal}
+          origenInicial={seleccionado ?? undefined}
+          onCerrar={() => setNavegando(false)}
+          onReportar={(id) => {
+            setSeleccionado(id)
+            setReportando(true)
+          }}
+        />
+      )}
       {reportando && <FormularioReporte tramos={tramos} tramoInicial={seleccionado} onCerrar={() => setReportando(false)} onEnviado={alEnviarReporte} />}
       {enListaEspera && <ListaEspera onCerrar={() => { setEnListaEspera(false); obtenerMetricas().then(setMetricas, () => {}) }} />}
     </div>

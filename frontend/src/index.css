@@ -85,3 +85,74 @@ body {
 .pm-compacto .pm-arriba .pm-pildora { top: auto; }
 .pm-sel .pm-pildora i { background: #fff; color: #1c1917; }
 .pm-compacto .pm-pildora i { min-width: 8px; width: 8px; height: 8px; padding: 0; font-size: 0; }
+/* Dificultades viales sobre el mapa: una fila de circulos con pictograma debajo de cada punto. */
+.pm-difs {
+  position: absolute;
+  top: 19px;
+  left: 10px;
+  display: flex;
+  gap: 3px;
+}
+.pm-izq .pm-difs { left: auto; right: 10px; flex-direction: row-reverse; }
+.pm-arriba .pm-difs { left: 0; top: 10px; transform: translateX(-50%); }
+.pm-dif {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  background: #f59e0b;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.35);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}
+.pm-dif:hover { transform: scale(1.15); }
+.pm-dif-problemas { background: #dc2626; }
+.pm-dif-previsto { background: #57534e; border-style: dashed; }
+.pm-dif-mas { background: #1c1917; }
+.pm-compacto .pm-difs { top: 14px; gap: 2px; }
+.pm-compacto .pm-dif { width: 18px; height: 18px; border-width: 1.5px; }
+.pm-compacto .pm-dif svg { width: 11px; height: 11px; }
+.pm-globo b { display: block; font-size: 14px; }
+.pm-globo span { display: block; margin-top: 2px; color: #57534e; }
+.pm-globo small { display: block; margin-top: 6px; font-weight: 600; color: #9a3412; }
+/* Tramo sin localidad: solo los pictogramas, centrados sobre la ruta. */
+.pm-solo .pm-difs,
+.pm-solo.pm-izq .pm-difs,
+.pm-solo.pm-arriba .pm-difs { top: -12px; left: 6px; right: auto; flex-direction: row; transform: none; }
+.pm-compacto .pm-solo .pm-difs { top: -9px; }
+
+/* Modo navegacion: mapa oscuro de noche, posicion, destino y pictogramas mas grandes. */
+.pm-nav.pm-noche { background: #1c1917; }
+.pm-nav.pm-noche .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(0.9) contrast(0.9) saturate(0.5); }
+.pm-nav .leaflet-control-attribution { opacity: 0.6; font-size: 9px; }
+.pm-puck {
+  position: absolute;
+  left: -22px;
+  top: -22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #2563eb;
+  border: 3px solid #fff;
+  box-shadow: 0 0 0 8px rgb(37 99 235 / 0.25), 0 2px 8px rgb(0 0 0 / 0.5);
+}
+.pm-destino {
+  position: absolute;
+  left: -11px;
+  top: -11px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #1c1917;
+  border: 5px solid #fff;
+  box-shadow: 0 1px 6px rgb(0 0 0 / 0.5);
+}
+.pm-grande .pm-difs { top: -15px; left: 12px; gap: 4px; }
+.pm-grande .pm-dif { width: 30px; height: 30px; }
