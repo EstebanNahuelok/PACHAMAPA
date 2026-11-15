@@ -13,3 +13,48 @@ async function pedir<T>(ruta: string, opciones?: RequestInit): Promise<T> {
 }
 
 export const obtenerTramos = () => pedir<RespuestaTramos>('/api/tramos')
+
+export interface NuevoReporte {
+  tipo?: string
+  tramoId: string
+  comentario?: string
+}
+
+export interface ReporteCreado {
+  id: string
+  tipo: string
+  etiqueta: string
+  tramoId: string
+  tramo: string
+  confirmado: boolean
+}
+
+export interface Metricas {
+  visitas: number
+  visitantes: number
+  reportes: number
+  reportesActivos: number
+  listaEspera: number
+}
+
+export interface Interesado {
+  nombre: string
+  contacto: string
+  rubro: string
+  mensaje?: string
+}
+
+const enviar = <T>(ruta: string, cuerpo: unknown) => pedir<T>(ruta, { method: 'POST', body: JSON.stringify(cuerpo) })
+
+export const enviarReporte = (reporte: NuevoReporte) => enviar<ReporteCreado>('/api/reportes', reporte)
+export const obtenerMetricas = () => pedir<Metricas>('/api/metricas')
+export const sumarListaEspera = (interesado: Interesado) => enviar<{ ok: true }>('/api/lista-espera', interesado)
+
+export function registrarVisita() {
+  let visitante = localStorage.getItem('pm-visitante')
+  if (!visitante) {
+    visitante = crypto.randomUUID()
+    localStorage.setItem('pm-visitante', visitante)
+  }
+  return enviar<null>('/api/visitas', { visitante })
+}

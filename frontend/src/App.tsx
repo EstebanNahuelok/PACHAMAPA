@@ -2,28 +2,41 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import Mapa from './components/Mapa'
 import ListaTramos from './components/ListaTramos'
 import DetalleTramo from './components/DetalleTramo'
-import { obtenerTramos } from './lib/api'
+import FormularioReporte from './components/FormularioReporte'
+import ListaEspera from './components/ListaEspera'
+import { obtenerMetricas, obtenerTramos, registrarVisita } from './lib/api'
+import type { Metricas, ReporteCreado } from './lib/api'
 import { ESTADOS, hora } from './lib/formato'
 import type { Estado, RespuestaTramos } from './lib/tipos'
 
 const INTERVALO_MS = 2 * 60 * 1000
+let visitaRegistrada = false
 
 export default function App() {
   const [datos, setDatos] = useState<RespuestaTramos | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [seleccionado, setSeleccionado] = useState<string | null>(null)
+  const [reportando, setReportando] = useState(false)
+  const [enListaEspera, setEnListaEspera] = useState(false)
+  const [aviso, setAviso] = useState<string | null>(null)
+  const [metricas, setMetricas] = useState<Metricas | null>(null)
   const panel = useRef<HTMLElement>(null)
 
   const cargar = useCallback(async () => {
     try {
       setDatos(await obtenerTramos())
       setError(null)
+      obtenerMetricas().then(setMetricas, () => {})
     } catch {
       setError('No se pudo conectar con el servidor. Reintentando…')
     }
   }, [])
 
   useEffect(() => {
+    if (!visitaRegistrada) {
+      visitaRegistrada = true
+      registrarVisita().catch(() => {})
+    }
     cargar()
     const id = setInterval(cargar, INTERVALO_MS)
     const alVolver = () => document.visibilityState === 'visible' && cargar()
@@ -41,6 +54,19 @@ export default function App() {
   const seleccionar = (id: string | null) => {
     setSeleccionado(id)
     panel.current?.scrollTo({ top: 0 })
+  }
+
+  useEffect(() => {
+    if (!aviso) return
+    const id = setTimeout(() => setAviso(null), 5000)
+    return () => clearTimeout(id)
+  }, [aviso])
+
+  const alEnviarReporte = (reporte: ReporteCreado) => {
+    setReportando(false)
+    seleccionar(reporte.tramoId)
+    setAviso(`Gracias. ${reporte.etiqueta} en ${reporte.tramo}${reporte.confirmado ? ': ya quedó confirmado' : ': se confirma con otro reporte igual'}.`)
+    cargar()
   }
 
   return (
@@ -65,6 +91,17 @@ export default function App() {
               </span>
             ))}
           </div>
+          {aviso && (
+            <p role="status" className="absolute inset-x-2 top-12 z-[500] mx-auto max-w-md rounded-lg bg-stone-900 px-4 py-3 text-center text-sm font-medium text-white shadow-lg">{aviso}</p>
+          )}
+          <button
+            type="button"
+            onClick={() => setReportando(true)}
+            disabled={!datos}
+            className="absolute bottom-7 right-3 z-[500] flex items-center gap-1.5 rounded-full bg-orange-700 py-3 pl-4 pr-5 text-base font-bold text-white shadow-lg ring-2 ring-white active:bg-orange-800 disabled:opacity-60"
+          >
+            <span className="text-xl leading-none">+</span> Reportar
+          </button>
         </div>
 
         <aside ref={panel} className="h-[44dvh] shrink-0 overflow-y-auto border-t border-stone-300 bg-white md:h-auto md:w-96 md:border-r md:border-t-0">
@@ -72,7 +109,7 @@ export default function App() {
             <p className="bg-amber-100 px-4 py-2 text-sm text-amber-900">{error ?? 'El clima puede estar desactualizado.'}</p>
           )}
           {tramo ? (
-            <DetalleTramo tramo={tramo} onVolver={() => seleccionar(null)} />
+            <DetalleTramo tramo={tramo} onVolver={() => seleccionar(null)} onReportar={() => setReportando(true)} />
           ) : (
             <>
               <div className="flex items-baseline justify-between px-4 pb-1 pt-3">
@@ -84,10 +121,25 @@ export default function App() {
                 )}
               </div>
               {datos ? <ListaTramos tramos={tramos} onSeleccionar={seleccionar} /> : !error && <p className="px-4 py-6 text-sm text-stone-500">Consultando el clima de cada tramo…</p>}
+              <div className="m-4 rounded-xl bg-stone-100 p-4">
+                <p className="text-sm font-bold">¿Trabajás en la ruta?</p>
+                <p className="mt-0.5 text-sm text-stone-600">Alertas por tramo y horario para agencias, transportistas y guías.</p>
+                <button type="button" onClick={() => setEnListaEspera(true)} className="mt-3 w-full rounded-lg bg-stone-900 px-4 py-2.5 text-sm font-semibold text-white">
+                  Sumarme a la lista de espera
+                </button>
+                {metricas && (
+                  <p className="mt-3 text-center text-xs text-stone-500">
+                    {metricas.visitas} visitas · {metricas.reportes} reportes de la gente · {metricas.listaEspera} en lista de espera
+                  </p>
+                )}
+              </div>
             </>
           )}
         </aside>
       </main>
+
+      {reportando && <FormularioReporte tramos={tramos} tramoInicial={seleccionado} onCerrar={() => setReportando(false)} onEnviado={alEnviarReporte} />}
+      {enListaEspera && <ListaEspera onCerrar={() => { setEnListaEspera(false); obtenerMetricas().then(setMetricas, () => {}) }} />}
     </div>
   )
 }

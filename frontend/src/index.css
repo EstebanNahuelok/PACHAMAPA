@@ -83,3 +83,4 @@ body {
 .pm-compacto .pm-pildora { top: -12px; height: 24px; padding: 0 6px 0 3px; font-size: 12px; }
 .pm-compacto .pm-pildora svg { width: 18px; height: 18px; }
 .pm-compacto .pm-arriba .pm-pildora { top: auto; }
+.pm-sel .pm-pildora i { background: #fff; color: #1c1917; }
