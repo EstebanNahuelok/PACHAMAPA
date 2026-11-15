@@ -6,7 +6,7 @@ Este documento explica qué cambió entre la última versión de `feat/mauro` (c
 
 - `damba` ahora contiene todo lo de `feat/mauro` más los cambios de este documento.
 - Lo nuevo: base de datos funcionando, reportes en un punto exacto de la ruta (con inicio y fin para obras, filas y cortes), sección de emergencia, consejos de manejo, un modo de prueba con rutas en Salta capital y la configuración para abrir la aplicación desde un túnel.
-- Son 36 archivos: 29 modificados y 7 nuevos, además de dos migraciones de base de datos.
+- Son 38 archivos: 30 modificados y 8 nuevos, entre ellos dos migraciones de base de datos.
 
 ## 1. Base de datos en marcha
 
