@@ -9,8 +9,11 @@ import Noticias from './components/Noticias'
 import AlertasWhatsApp from './components/AlertasWhatsApp'
 import BotonTema from './components/BotonTema'
 import Navegacion from './components/Navegacion'
+import Emergencia from './components/Emergencia'
 import { obtenerMetricas, obtenerTramos, registrarVisita } from './lib/api'
 import type { Metricas, ReporteCreado } from './lib/api'
+import { puntoSobreRuta } from './lib/ruta'
+import type { PuntoElegido } from './lib/ruta'
 import { ESTADOS, haceCuanto, hora, textoAlerta } from './lib/formato'
 import { estimar, guardarDatos, leerDatos, precargarMapa } from './lib/offline'
 import type { Estado, RespuestaTramos } from './lib/tipos'
@@ -18,6 +21,8 @@ import type { Tema } from './lib/tema'
 
 const INTERVALO_MS = 2 * 60 * 1000
 const ADELANTOS = [0, 3, 6, 12]
+const CLAVE_PRUEBA = 'pm-prueba'
+const MAXIMO_LARGO_KM = 15
 let visitaRegistrada = false
 
 export default function App({ tema, onAlternarTema }: { tema: Tema; onAlternarTema: () => void }) {
@@ -28,8 +33,12 @@ export default function App({ tema, onAlternarTema }: { tema: Tema; onAlternarTe
   const [sinSenal, setSinSenal] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [seleccionado, setSeleccionado] = useState<string | null>(null)
-  const [reportando, setReportando] = useState(false)
+  // Un reporte va en un punto exacto de la ruta: primero se elige el lugar (tocando el mapa o con el GPS) y despues se completa.
+  // Los hechos con largo (obras, filas, cortes) pueden llevar un segundo punto: donde terminan.
+  const [eligiendo, setEligiendo] = useState<'inicio' | 'fin' | null>(null)
+  const [punto, setPunto] = useState<PuntoElegido | null>(null)
   const [navegando, setNavegando] = useState(false)
+  const [enEmergencia, setEnEmergencia] = useState(false)
   const [verTodos, setVerTodos] = useState(false)
   const [adelanto, setAdelanto] = useState(0)
   const [desdeVista, setDesdeVista] = useState(0)
@@ -39,13 +48,23 @@ export default function App({ tema, onAlternarTema }: { tema: Tema; onAlternarTe
   const [metricas, setMetricas] = useState<Metricas | null>(null)
   const panel = useRef<HTMLElement>(null)
   const alertasVistas = useRef<Set<string> | null>(null)
+  // TEST EN SALTA: suma una ruta de prueba en Salta capital para desarrollar con GPS real. Se activa desde
+  // la navegacion o abriendo la aplicacion con ?prueba=salta, y queda guardado en el telefono.
+  const [prueba, setPrueba] = useState(() => new URLSearchParams(location.search).get('prueba') === 'salta' || localStorage.getItem(CLAVE_PRUEBA) === '1')
+  const alternarPrueba = (activo: boolean) => {
+    if (activo) localStorage.setItem(CLAVE_PRUEBA, '1')
+    else localStorage.removeItem(CLAVE_PRUEBA)
+    // Las alertas de Salta que aparecen al activarlo no son novedades: no se anuncian.
+    alertasVistas.current = null
+    setPrueba(activo)
+  }
 
   const cargar = useCallback(async () => {
     let nuevos: RespuestaTramos
     try {
       // Sin red no vale la pena esperar a que el pedido falle.
       if (!navigator.onLine) throw new Error('sin conexion')
-      nuevos = await obtenerTramos()
+      nuevos = await obtenerTramos(prueba)
       // El servidor puede responder sin clima (falla de Open-Meteo): no se pisa lo guardado con una respuesta vacia.
       if (!nuevos.climaDisponible && leerDatos()) throw new Error('sin clima')
       if (nuevos.climaDisponible) guardarDatos(nuevos)
@@ -68,7 +87,7 @@ export default function App({ tema, onAlternarTema }: { tema: Tema; onAlternarTe
       setAviso(`Alerta nueva en ${nuevas[0].tramo}: ${textoAlerta(nuevas[0])}${nuevas.length > 1 ? ` (y ${nuevas.length - 1} más)` : ''}`)
       navigator.vibrate?.(200)
     }
-  }, [])
+  }, [prueba])
 
   useEffect(() => {
     if (!visitaRegistrada) {
@@ -110,8 +129,32 @@ export default function App({ tema, onAlternarTema }: { tema: Tema; onAlternarTe
     return () => clearTimeout(id)
   }, [aviso])
 
+  const empezarReporte = () => {
+    setPunto(null)
+    setEligiendo('inicio')
+    setNavegando(false)
+  }
+  const alElegir = (lat: number, lon: number) => {
+    const elegido = puntoSobreRuta(datos?.tramos ?? [], lat, lon)
+    if (!elegido) return setAviso('Ese punto está lejos de la ruta. Tocá sobre el camino, donde está el problema.')
+    if (eligiendo === 'fin' && punto) {
+      const largo = Math.abs(elegido.km - punto.km)
+      if (elegido.ruta !== punto.ruta || largo < 0.1 || largo > MAXIMO_LARGO_KM) return setAviso(`El final tiene que estar sobre la misma ruta, a menos de ${MAXIMO_LARGO_KM} km del inicio.`)
+      setPunto({ ...punto, fin: { lat: elegido.lat, lon: elegido.lon, texto: elegido.texto } })
+    } else setPunto(elegido)
+    setEligiendo(null)
+  }
+  const usarUbicacion = () => {
+    if (!navigator.geolocation) return setAviso('Tu navegador no permite usar la ubicación. Tocá el punto en el mapa.')
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => alElegir(coords.latitude, coords.longitude),
+      () => setAviso('No pudimos obtener tu ubicación. Tocá el punto en el mapa.'),
+      { enableHighAccuracy: true, timeout: 10000 },
+    )
+  }
+
   const alEnviarReporte = (reporte: ReporteCreado) => {
-    setReportando(false)
+    setPunto(null)
     seleccionar(reporte.tramoId)
     setAviso(`Gracias. ${reporte.etiqueta} en ${reporte.tramo}${reporte.confirmado ? ': ya quedó confirmado' : ': se confirma con otro reporte igual'}.`)
     cargar()
@@ -133,7 +176,23 @@ export default function App({ tema, onAlternarTema }: { tema: Tema; onAlternarTe
 
       <main className="flex min-h-0 flex-1 flex-col landscape:flex-row-reverse">
         <div className="relative min-h-0 flex-1">
-          <Mapa tramos={tramos} seleccionado={seleccionado} onSeleccionar={seleccionar} />
+          <Mapa tramos={tramos} seleccionado={seleccionado} onSeleccionar={seleccionar} eligiendo={eligiendo !== null} onPunto={alElegir} puntoElegido={punto} />
+          {eligiendo && (
+            <div role="status" className="absolute inset-x-2 top-2 z-[600] mx-auto max-w-md rounded-xl bg-stone-900 px-4 py-3 text-white shadow-xl">
+              <p className="text-base font-bold">{eligiendo === 'fin' ? 'Tocá dónde termina' : 'Tocá el punto exacto de la ruta'}</p>
+              <p className="text-sm text-stone-300">
+                {eligiendo === 'fin' ? 'Se va a marcar el trecho entre el inicio y este punto.' : 'El reporte se marca en ese lugar, no en todo el tramo. Acercá el mapa para ser más preciso.'}
+              </p>
+              <div className="mt-2 flex gap-2">
+                <button type="button" onClick={usarUbicacion} className="flex-1 rounded-lg bg-orange-700 px-3 py-2 text-sm font-bold">
+                  Estoy acá
+                </button>
+                <button type="button" onClick={() => setEligiendo(null)} className="flex-1 rounded-lg bg-stone-700 px-3 py-2 text-sm font-semibold">
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          )}
           <div className="pm-material pointer-events-none absolute left-2 top-2 z-[500] flex gap-3 rounded-full px-3 py-1.5 text-xs font-medium">
             {(['bien', 'atencion', 'problemas'] as const).map((e) => (
               <span key={e} className="flex items-center gap-1">
@@ -152,15 +211,23 @@ export default function App({ tema, onAlternarTema }: { tema: Tema; onAlternarTe
               </button>
             ))}
           </div>
+          {prueba && (
+            <button type="button" onClick={() => alternarPrueba(false)} className="absolute left-2 top-[5.25rem] z-[500] rounded-full bg-blue-700 px-3 py-1.5 text-xs font-bold text-white shadow">
+              TEST EN SALTA · salir
+            </button>
+          )}
           {aviso && (
             <p role="status" className="absolute inset-x-2 top-12 z-[500] mx-auto max-w-md rounded-lg bg-stone-900 px-4 py-3 text-center text-sm font-medium text-white shadow-lg">{aviso}</p>
           )}
+          <button type="button" onClick={() => setEnEmergencia(true)} aria-label="Emergencia: a quién llamar" className="absolute bottom-[5.25rem] left-3 z-[500] rounded-full bg-red-700 px-5 py-3 text-base font-black text-white shadow-lg ring-2 ring-white">
+            SOS
+          </button>
           <button type="button" onClick={() => setNavegando(true)} disabled={!datos} className="absolute bottom-7 left-3 z-[500] rounded-full bg-stone-900 px-5 py-3 text-base font-bold text-white shadow-lg ring-2 ring-white disabled:opacity-60">
             Navegar
           </button>
           <button
             type="button"
-            onClick={() => setReportando(true)}
+            onClick={empezarReporte}
             disabled={!datos || sinSenal}
             className="absolute bottom-7 right-3 z-[500] flex items-center gap-1.5 rounded-full bg-orange-700 py-3 pl-4 pr-5 text-base font-bold text-white shadow-lg ring-2 ring-white active:bg-orange-800 disabled:opacity-60"
           >
@@ -179,7 +246,7 @@ export default function App({ tema, onAlternarTema }: { tema: Tema; onAlternarTe
           )}
           {tramo ? (
             <>
-              <DetalleTramo tramo={tramo} parteOficial={datos?.parteOficial} onVolver={() => seleccionar(null)} onReportar={() => setReportando(true)} />
+              <DetalleTramo tramo={tramo} parteOficial={datos?.parteOficial} onVolver={() => seleccionar(null)} onReportar={empezarReporte} />
               {tramo.localidad && <Noticias titulo={`${tramo.nombre} en los diarios`} noticias={(datos?.noticias ?? []).filter((n) => n.localidad === tramo.localidad)} />}
             </>
           ) : (
@@ -229,15 +296,32 @@ export default function App({ tema, onAlternarTema }: { tema: Tema; onAlternarTe
         <Navegacion
           tramos={datos?.tramos ?? []}
           sinSenal={sinSenal}
+          prueba={prueba}
+          onPrueba={alternarPrueba}
           origenInicial={seleccionado ?? undefined}
           onCerrar={() => setNavegando(false)}
-          onReportar={(id) => {
-            setSeleccionado(id)
-            setReportando(true)
-          }}
+          onReportar={alElegir}
+          onEmergencia={() => setEnEmergencia(true)}
         />
       )}
-      {reportando && <FormularioReporte tramos={tramos} tramoInicial={seleccionado} onCerrar={() => setReportando(false)} onEnviado={alEnviarReporte} />}
+      {enEmergencia && <Emergencia tramos={datos?.tramos ?? []} onCerrar={() => setEnEmergencia(false)} />}
+      {punto && (
+        <FormularioReporte
+          punto={punto}
+          oculto={eligiendo !== null}
+          onCambiarPunto={() => {
+            setEligiendo('inicio')
+            setNavegando(false)
+          }}
+          onMarcarFinal={() => {
+            setEligiendo('fin')
+            setNavegando(false)
+          }}
+          onQuitarFinal={() => setPunto({ ...punto, fin: undefined })}
+          onCerrar={() => setPunto(null)}
+          onEnviado={alEnviarReporte}
+        />
+      )}
       {suscribiendo && <AlertasWhatsApp tramos={datos?.tramos ?? []} tramoInicial={seleccionado} onCerrar={() => { setSuscribiendo(false); obtenerMetricas().then(setMetricas, () => {}) }} />}
       {enListaEspera && <ListaEspera onCerrar={() => { setEnListaEspera(false); obtenerMetricas().then(setMetricas, () => {}) }} />}
     </div>

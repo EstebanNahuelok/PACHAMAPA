@@ -1,25 +1,35 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import CaminoPorDelante from './CaminoPorDelante'
+import ConsejosViaje from './ConsejosViaje'
 import IconoDificultad from './IconoDificultad'
 import MapaNavegacion from './MapaNavegacion'
 import { ESTADOS, hora } from '../lib/formato'
-import { VELOCIDAD_SUPUESTA, armarRecorrido, decir, distancia, duracion, fraseDe } from '../lib/navegacion'
-import type { Ubicacion } from '../lib/navegacion'
+import { VELOCIDAD_SUPUESTA, aDistancia, armarRecorrido, decir, duracion, fraseDe, kmDe } from '../lib/navegacion'
+import type { Trecho, Ubicacion } from '../lib/navegacion'
 import { DEMO_ALERTAS, tramosDemo } from '../lib/demo'
-import { puntoEnRuta } from '../lib/ruta'
+import { puntoEnRuta, ubicar } from '../lib/ruta'
+import { consejoCorto, consejoDelTramo } from '../lib/consejos'
+import { enlaceWhatsApp, leerContacto, mensajeDeSalida } from '../lib/emergencia'
 import type { Tramo } from '../lib/tipos'
 
 interface Props {
   tramos: Tramo[]
   sinSenal: boolean
+  // Modo TEST EN SALTA: los tramos incluyen la ruta de prueba y se navega con el GPS real.
+  prueba: boolean
+  onPrueba: (activo: boolean) => void
   origenInicial?: string
   onCerrar: () => void
-  onReportar: (tramoId: string) => void
+  // Se reporta en la posicion actual, no en el tramo.
+  onReportar: (lat: number, lon: number) => void
+  onEmergencia: () => void
 }
 
 const GPS = 'gps'
 const DEMO = 'demo'
 const DEMO_FLUIDA = 'demo-alertas'
+const TEST_SALTA = 'test-salta'
+const SALIR_TEST = 'salir-test'
 const AVISAR_A_KM = 5
 const PASO_DEMO_MS = 2500
 const selector = 'min-w-0 flex-1 rounded-lg border border-stone-600 bg-stone-800 px-2 py-2.5 text-base text-white'
@@ -43,15 +53,27 @@ function Trazo({ nombre, tamano = 26 }: { nombre: keyof typeof TRAZOS; tamano?: 
   )
 }
 
-export default function Navegacion({ tramos, sinSenal, origenInicial = GPS, onCerrar, onReportar }: Props) {
+export default function Navegacion({ tramos, sinSenal, prueba, onPrueba, origenInicial = GPS, onCerrar, onReportar, onEmergencia }: Props) {
+  // Antes de mostrar el mapa se repasan los consejos del viaje; se cierra con "Arrancar".
+  const [arranco, setArranco] = useState(false)
   const localidad = (id: string) => tramos.find((t) => t.localidad === id)?.id ?? ''
   const [origenId, setOrigenId] = useState(origenInicial)
   const [destinoElegido, setDestinoId] = useState<string | null>(null)
-  // Por defecto se va hacia el norte; si se sale de Abra Pampa, hacia San Salvador.
+  const [ubicacion, setUbicacion] = useState<Ubicacion | null>(null)
   const [avance, setAvance] = useState(0)
   const conAlertasSimuladas = origenId === DEMO_FLUIDA
-  const destinoId = conAlertasSimuladas ? localidad(DEMO_ALERTAS.hasta) : destinoElegido ?? (origenInicial === localidad('abra-pampa') ? localidad('san-salvador') : localidad('abra-pampa'))
-  const [ubicacion, setUbicacion] = useState<Ubicacion | null>(null)
+  // En el test, el destino por defecto es la otra punta de la ruta de prueba en la que se esta parado.
+  const destinoDePrueba = (() => {
+    const punto = origenId === GPS ? ubicacion : tramos.find((t) => t.id === origenId)
+    if (!prueba || !punto) return undefined
+    const aca = ubicar(punto.lat, punto.lon, true)
+    const referencias = tramos.filter((t) => t.prueba && t.localidad && t.rutaId === aca.ruta)
+    if (referencias.length === 0) return undefined
+    const [inicio, fin] = [referencias[0], referencias.at(-1)!]
+    return (fin.kmInicio + fin.kmFin) / 2 - aca.km < 3 ? inicio.id : fin.id
+  })()
+  // Por defecto se va hacia el norte; si se sale de Abra Pampa, hacia San Salvador.
+  const destinoId = conAlertasSimuladas ? localidad(DEMO_ALERTAS.hasta) : destinoElegido ?? destinoDePrueba ?? (origenInicial === localidad('abra-pampa') ? localidad('san-salvador') : localidad('abra-pampa'))
   const [errorGps, setErrorGps] = useState<string | null>(null)
   const [voz, setVoz] = useState(false)
   const [siguiendo, setSiguiendo] = useState(true)
@@ -126,34 +148,48 @@ export default function Navegacion({ tramos, sinSenal, origenInicial = GPS, onCe
     return tramos.find((t) => t.id === origenId)
   }, [origenId, ubicacion, enDemo, tramos, avance])
   const recorrido = useMemo(() => (origen && destino ? armarRecorrido(datos, origen, destino, ahora) : null), [datos, origen, destino, ahora])
-  const enRuta = recorrido && !recorrido.fueraDeRuta ? recorrido : null
+  const enRuta = recorrido && !recorrido.fueraDeRuta && !recorrido.sinCamino ? recorrido : null
   const posicion = useMemo(() => (origen ? { lat: origen.lat, lon: origen.lon, rumbo: 'rumbo' in origen ? origen.rumbo : null } : null), [origen])
 
   const actual = enRuta?.trechos[0]
   const tramoActual = enRuta?.pasos[0]?.tramo
   const despues = enRuta?.trechos.slice(1).find((t) => t.dificultades.length > 0)
+  const consejo = enRuta ? consejoDelTramo(enRuta) : null
+  const contacto = leerContacto()
   const velocidad = origen && 'velocidad' in origen && origen.velocidad != null ? Math.round(origen.velocidad) : null
 
   // Avisa por voz, una sola vez, cada trecho con dificultades cuando queda a pocos kilometros.
   useEffect(() => {
     if (!voz || !enRuta) return
-    const proximo = enRuta.trechos.find((t) => t.dificultades.length > 0 && t.km <= AVISAR_A_KM && !avisados.current.has(t.clave))
+    const proximo = enRuta.trechos.find((t) => t.dificultades.length > 0 && kmDe(t) <= AVISAR_A_KM && !avisados.current.has(t.clave))
     if (!proximo) return
     avisados.current.add(proximo.clave)
-    decir(fraseDe(proximo))
+    decir(conConsejo(proximo))
   }, [voz, enRuta])
+
+  // El aviso por voz dice que hay y que hacer.
+  const conConsejo = (t: Trecho) => {
+    const consejo = t.dificultades.map((d) => consejoCorto(d.tipo)).find(Boolean)
+    return consejo ? `${fraseDe(t)} ${consejo}.` : fraseDe(t)
+  }
 
   const alternarVoz = () => {
     if (voz) window.speechSynthesis?.cancel()
     else {
       const primero = enRuta?.trechos.find((t) => t.dificultades.length > 0)
       if (primero) avisados.current.add(primero.clave)
-      decir(primero ? fraseDe(primero) : 'Avisos por voz activados. No hay dificultades en el camino.')
+      decir(primero ? conConsejo(primero) : 'Avisos por voz activados. No hay dificultades en el camino.')
     }
     setVoz(!voz)
   }
 
   const elegirOrigen = (id: string) => {
+    // TEST EN SALTA no es un origen: activa la ruta de prueba y sigue con el GPS real.
+    if (id === TEST_SALTA || id === SALIR_TEST) {
+      onPrueba(id === TEST_SALTA)
+      setDestinoId(null)
+      id = GPS
+    }
     setOrigenId(id)
     setPasoDemo(0)
     setAvance(0)
@@ -163,7 +199,8 @@ export default function Navegacion({ tramos, sinSenal, origenInicial = GPS, onCe
   const selectores = (
     <div className="flex items-center gap-2">
       <select aria-label="Desde" value={origenId} onChange={(e) => elegirOrigen(e.target.value)} className={selector}>
-        <option value={GPS}>Mi ubicación</option>
+        <option value={GPS}>{prueba ? 'Mi ubicación (TEST EN SALTA)' : 'Mi ubicación'}</option>
+        <option value={prueba ? SALIR_TEST : TEST_SALTA}>{prueba ? 'Salir de TEST EN SALTA' : 'TEST EN SALTA (GPS real)'}</option>
         <option value={DEMO}>Simulación (demo)</option>
         <option value={DEMO_FLUIDA}>Demo fluida con alertas simuladas</option>
         {tramos.filter((t) => t.localidad || t.id === origenId).map((t) => (
@@ -172,7 +209,8 @@ export default function Navegacion({ tramos, sinSenal, origenInicial = GPS, onCe
       </select>
       <span aria-hidden="true">→</span>
       <select aria-label="Hasta" value={destinoId} disabled={conAlertasSimuladas} onChange={(e) => setDestinoId(e.target.value)} className={selector}>
-        {tramos.filter((t) => t.localidad).map((t) => (
+        {/* En el test van primero los destinos de Salta, que son los que tienen camino desde ahi. */}
+        {tramos.filter((t) => t.localidad).sort((a, b) => Number(b.prueba ?? false) - Number(a.prueba ?? false)).map((t) => (
           <option key={t.id} value={t.id}>{t.nombre}</option>
         ))}
       </select>
@@ -203,6 +241,7 @@ export default function Navegacion({ tramos, sinSenal, origenInicial = GPS, onCe
                         <IconoDificultad dificultad={d} tamano={30} />
                       </span>
                       {d.titulo}
+                      {d.km != null && <span className="ml-auto shrink-0 rounded-full bg-black/30 px-2 py-0.5 text-base tabular-nums">{d.km < 0.05 ? 'acá' : `a ${aDistancia(d.km)}`}</span>}
                     </li>
                   ))}
                   {actual.largo > 7 && <li className="text-sm font-medium opacity-90">Sigue por {Math.round(actual.largo)} km</li>}
@@ -214,10 +253,11 @@ export default function Navegacion({ tramos, sinSenal, origenInicial = GPS, onCe
                 </p>
               )}
             </section>
+            {consejo && <p className="rounded-xl bg-stone-900/95 px-3 py-2 text-base font-semibold shadow-lg">{consejo}</p>}
             {/* Tarjeta chica de "despues", como la segunda maniobra de Google Maps. */}
             {despues && (
               <section className="flex items-center gap-2 rounded-xl bg-stone-900/95 px-3 py-2 shadow-lg">
-                <span className="shrink-0 text-sm font-semibold text-stone-300">En {distancia(despues.km)}</span>
+                <span className="shrink-0 text-sm font-semibold text-stone-300">En {aDistancia(kmDe(despues))}</span>
                 {despues.dificultades.slice(0, 3).map((d) => (
                   <IconoDificultad key={d.clave} dificultad={d} tamano={26} />
                 ))}
@@ -229,7 +269,9 @@ export default function Navegacion({ tramos, sinSenal, origenInicial = GPS, onCe
           <section className="space-y-2 rounded-2xl bg-stone-900 px-4 py-3 shadow-xl">
             <p className="text-base font-semibold">
               {recorrido?.fueraDeRuta
-                ? `Estás a ${Math.round(recorrido.desvio)} km de la RN 9 y la RN 52.`
+                ? `Estás a ${Math.round(recorrido.desvio)} km de ${prueba ? 'las rutas cargadas' : 'la RN 9 y la RN 52'}.`
+                : recorrido?.sinCamino
+                  ? `No hay un camino cargado hasta ${destino?.nombre}. Elegí otro destino.`
                 : origenId === GPS && !navigator.geolocation
                   ? 'Este navegador no permite usar la ubicación.'
                   : (errorGps ?? 'Buscando tu ubicación…')}
@@ -238,6 +280,7 @@ export default function Navegacion({ tramos, sinSenal, origenInicial = GPS, onCe
             {selectores}
           </section>
         )}
+        {prueba && !conAlertasSimuladas && <p className="rounded-xl bg-blue-700 px-3 py-1.5 text-sm font-semibold">TEST EN SALTA: ruta de prueba, con clima y reportes reales.</p>}
         {conAlertasSimuladas && <p className="rounded-xl bg-blue-700 px-3 py-1.5 text-sm font-semibold">Demostración: estas alertas son simuladas, no reales.</p>}
         {sinSenal && <p className="rounded-xl bg-stone-900/95 px-3 py-2 text-sm">Sin datos nuevos: se estima con el último pronóstico recibido.</p>}
       </div>
@@ -252,6 +295,9 @@ export default function Navegacion({ tramos, sinSenal, origenInicial = GPS, onCe
       )}
 
       <div className="absolute bottom-28 right-3 z-[500] flex flex-col gap-3">
+        <button type="button" onClick={onEmergencia} aria-label="Emergencia: a quién llamar" className={`${redondo} !bg-red-700 text-sm font-black`}>
+          SOS
+        </button>
         {!siguiendo && (
           <button type="button" onClick={() => setSiguiendo(true)} aria-label="Volver a mi posición" className={redondo}>
             <Trazo nombre="centrar" />
@@ -260,7 +306,7 @@ export default function Navegacion({ tramos, sinSenal, origenInicial = GPS, onCe
         <button type="button" onClick={alternarVoz} aria-pressed={voz} aria-label={voz ? 'Apagar los avisos por voz' : 'Activar los avisos por voz'} className={`${redondo} ${voz ? '!bg-blue-600' : ''}`}>
           <Trazo nombre={voz ? 'voz' : 'silencio'} />
         </button>
-        <button type="button" disabled={sinSenal || !tramoActual || origenId === DEMO || conAlertasSimuladas} onClick={() => tramoActual && onReportar(tramoActual.id)} aria-label="Reportar algo en este tramo" className={`${redondo} !bg-orange-600`}>
+        <button type="button" disabled={sinSenal || !tramoActual || origenId === DEMO || conAlertasSimuladas} onClick={() => posicion && onReportar(posicion.lat, posicion.lon)} aria-label="Reportar algo acá" className={`${redondo} !bg-orange-600`}>
           <Trazo nombre="mas" tamano={30} />
         </button>
       </div>
@@ -295,6 +341,43 @@ export default function Navegacion({ tramos, sinSenal, origenInicial = GPS, onCe
         </button>
       </div>
 
+      {!arranco && (
+        <div className="absolute inset-0 z-[700] flex flex-col bg-stone-900">
+          <header className="shrink-0 border-b border-stone-700 px-4 py-3">
+            <h2 className="text-xl font-bold">Antes de salir{enRuta && destino ? ` hacia ${destino.nombre}` : ''}</h2>
+            {enRuta && (
+              <p className="text-sm text-stone-300">
+                {Math.round(enRuta.total)} km · llegás a las {horaDe(enRuta.llegada)}
+              </p>
+            )}
+          </header>
+          <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
+            <ConsejosViaje recorrido={enRuta} />
+          </div>
+          <div className="shrink-0 space-y-2 border-t border-stone-700 px-4 pb-4 pt-3">
+            {contacto && enRuta && destino ? (
+              <a href={enlaceWhatsApp(contacto.telefono, mensajeDeSalida(destino.nombre, horaDe(enRuta.llegada)))} target="_blank" rel="noreferrer" className="block rounded-xl bg-stone-700 py-3 text-center text-base font-semibold">
+                Avisar a {contacto.nombre} que salgo
+              </a>
+            ) : (
+              !contacto && (
+                <button type="button" onClick={onEmergencia} className="block w-full rounded-xl bg-stone-700 py-3 text-center text-base font-semibold">
+                  Cargar un contacto de emergencia
+                </button>
+              )
+            )}
+            <div className="flex gap-2">
+              <button type="button" onClick={onCerrar} className="rounded-xl bg-stone-700 px-5 py-4 text-lg font-semibold">
+                Volver
+              </button>
+              <button type="button" onClick={() => setArranco(true)} className="flex-1 rounded-xl bg-emerald-600 py-4 text-xl font-bold">
+                Arrancar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {verCamino && (
         <div className="absolute inset-0 z-[600] flex flex-col bg-stone-900">
           <header className="flex shrink-0 items-center gap-2 border-b border-stone-700 px-3 py-2">
@@ -308,6 +391,9 @@ export default function Navegacion({ tramos, sinSenal, origenInicial = GPS, onCe
             {enRuta ? (
               <>
                 <CaminoPorDelante recorrido={enRuta} />
+                <div className="mb-4 border-t border-stone-700 pt-4">
+                  <ConsejosViaje recorrido={enRuta} />
+                </div>
                 <p className="text-xs text-stone-400">
                   Llegadas calculadas a {Math.round(enRuta.velocidad)} km/h{enRuta.velocidadMedida ? ' (tu velocidad actual)' : ` (supuesto: ${VELOCIDAD_SUPUESTA} km/h)`}. Dejá el teléfono en un soporte y no lo toques mientras manejás.
                 </p>

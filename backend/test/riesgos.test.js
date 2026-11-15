@@ -114,3 +114,42 @@ test('cualquier reporte activo genera alerta, aunque no este confirmado ni sea g
   assert.deepEqual(alertasCon([{ tipo: 'barro', etiqueta: 'Barro o piedras', cantidad: 2, confirmado: true, grave: false }]), ['reporte:Barro o piedras']);
   assert.equal(alertasCon([{ tipo: 'crecida', etiqueta: 'Crecida o agua en la ruta', cantidad: 2, confirmado: true, grave: true }]).length, 1);
 });
+
+test('los tramos de prueba de Salta solo aparecen si se piden', async () => {
+  const { calcularTramos } = await import('../src/services/tramos.js');
+  const sinPrueba = (await calcularTramos()).tramos;
+  const conPrueba = (await calcularTramos({ conPrueba: true })).tramos;
+  assert.ok(sinPrueba.every((t) => !t.prueba));
+  assert.deepEqual([...new Set(conPrueba.filter((t) => t.prueba).map((t) => t.rutaId))], ['cerrillos-vaqueros', 'libertad-san-luis']);
+  assert.equal(puntoPorId('hiper-libertad').rutaId, 'libertad-san-luis');
+});
+
+test('los reportes se confirman por cercania, no por tramo', async () => {
+  const { agruparPorTramo } = await import('../src/services/reportes.js');
+  const r = (lat, lon, comentario) => ({ tipo: 'derrumbe', tramoId: 'rn9-16', lat, lon, comentario, creadoEn: new Date() });
+  // Dos derrumbes a 3 km uno del otro en el mismo tramo: son dos hechos, ninguno confirmado.
+  const [separados] = agruparPorTramo([r(-23.58, -65.395), r(-23.553, -65.395)]).get('rn9-16');
+  assert.equal(separados.puntos.length, 2);
+  assert.equal(separados.confirmado, false);
+  // Dos a 200 m: el mismo hecho, confirmado. Los reportes sin punto se juntan entre si.
+  const [juntos] = agruparPorTramo([r(-23.58, -65.395, 'a'), r(-23.5818, -65.395, 'b'), r(null, null), r(null, null)]).get('rn9-16');
+  assert.equal(juntos.cantidad, 4);
+  assert.deepEqual(juntos.puntos.map((p) => [p.cantidad, p.confirmado]), [[2, true], [2, true]]);
+  assert.deepEqual(juntos.puntos[0].comentarios, ['a', 'b']);
+});
+
+test('un reporte con punto exacto no pinta todo el tramo, pero sigue contando para el estado y las alertas', async () => {
+  const { agruparPorTramo } = await import('../src/services/reportes.js');
+  const r = (extra) => ({ tipo: 'derrumbe', tramoId: 'rn9-16', creadoEn: new Date(), ...extra });
+  const conPunto = agruparPorTramo([r({ lat: -23.58, lon: -65.395 }), r({ lat: -23.5805, lon: -65.395 })]).get('rn9-16');
+  const tramo = armarTramo(puntoPorId('tilcara'), { reportes: conPunto });
+  assert.equal(tramo.estado, 'problemas');
+  assert.equal(tramo.estadoLinea, 'bien');
+  assert.equal(armarAlertas([tramo]).length, 1);
+  // Sin punto (reportes viejos) se sigue pintando el tramo entero.
+  const viejo = agruparPorTramo([r({ lat: null, lon: null }), r({ lat: null, lon: null })]).get('rn9-16');
+  assert.equal(armarTramo(puntoPorId('tilcara'), { reportes: viejo }).estadoLinea, 'problemas');
+  // El final se guarda con el punto.
+  const [obras] = agruparPorTramo([{ tipo: 'obras', tramoId: 'rn9-16', lat: -23.58, lon: -65.395, latFin: -23.57, lonFin: -65.394, creadoEn: new Date() }]).get('rn9-16');
+  assert.deepEqual(obras.puntos[0].fin, { lat: -23.57, lon: -65.394 });
+});

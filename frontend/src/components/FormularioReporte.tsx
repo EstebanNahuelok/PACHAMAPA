@@ -3,56 +3,41 @@ import type { FormEvent } from 'react'
 import Modal from './Modal'
 import { enviarReporte } from '../lib/api'
 import type { ReporteCreado } from '../lib/api'
-import { TIPOS_REPORTE } from '../lib/reportes'
-import type { Tramo } from '../lib/tipos'
+import { CON_LARGO, TIPOS_REPORTE } from '../lib/reportes'
+import type { TipoReporte } from '../lib/tipos'
+import type { PuntoElegido } from '../lib/ruta'
 
 interface Props {
-  tramos: Tramo[]
-  tramoInicial: string | null
+  // Lugar exacto del reporte, elegido tocando el mapa o con la ubicacion del telefono.
+  punto: PuntoElegido
+  // Mientras se elige un punto en el mapa el formulario se esconde, pero conserva lo ya completado.
+  oculto: boolean
+  onCambiarPunto: () => void
+  onMarcarFinal: () => void
+  onQuitarFinal: () => void
   onCerrar: () => void
   onEnviado: (reporte: ReporteCreado) => void
 }
 
 const OTRO = 'otro'
 
-function masCercano(tramos: Tramo[], lat: number, lon: number) {
-  const distancia = (t: Tramo) => Math.hypot(t.lat - lat, (t.lon - lon) * Math.cos((lat * Math.PI) / 180))
-  return tramos.reduce((mejor, t) => (distancia(t) < distancia(mejor) ? t : mejor))
-}
-
-export default function FormularioReporte({ tramos, tramoInicial, onCerrar, onEnviado }: Props) {
+export default function FormularioReporte({ punto, oculto, onCambiarPunto, onMarcarFinal, onQuitarFinal, onCerrar, onEnviado }: Props) {
   const [tipo, setTipo] = useState<string | null>(null)
-  const [tramoId, setTramoId] = useState(tramoInicial ?? '')
   const [comentario, setComentario] = useState('')
   const [enviando, setEnviando] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [ubicando, setUbicando] = useState(false)
 
-  const usarUbicacion = () => {
-    if (!navigator.geolocation) return setError('Tu navegador no permite usar la ubicación.')
-    setUbicando(true)
-    navigator.geolocation.getCurrentPosition(
-      ({ coords }) => {
-        setTramoId(masCercano(tramos, coords.latitude, coords.longitude).id)
-        setUbicando(false)
-      },
-      () => {
-        setError('No pudimos obtener tu ubicación. Elegí el tramo de la lista.')
-        setUbicando(false)
-      },
-      { enableHighAccuracy: false, timeout: 10000 },
-    )
-  }
+  const conLargo = CON_LARGO.includes(tipo as TipoReporte)
 
   const enviarFormulario = async (e: FormEvent) => {
     e.preventDefault()
     if (!tipo) return setError('Elegí qué está pasando.')
-    if (!tramoId) return setError('Elegí el tramo donde está pasando.')
     if (tipo === OTRO && !comentario.trim()) return setError('Contanos qué está pasando.')
     setEnviando(true)
     setError(null)
     try {
-      onEnviado(await enviarReporte({ tipo: tipo === OTRO ? undefined : tipo, tramoId, comentario: comentario.trim() || undefined }))
+      const final = conLargo && punto.fin ? { latFin: punto.fin.lat, lonFin: punto.fin.lon } : {}
+      onEnviado(await enviarReporte({ tipo: tipo === OTRO ? undefined : tipo, tramoId: punto.tramoId, lat: punto.lat, lon: punto.lon, ...final, comentario: comentario.trim() || undefined }))
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo enviar el reporte.')
       setEnviando(false)
@@ -71,9 +56,21 @@ export default function FormularioReporte({ tramos, tramoInicial, onCerrar, onEn
     </button>
   )
 
+  if (oculto) return null
+
   return (
     <Modal titulo="Reportar un evento" onCerrar={onCerrar}>
       <form onSubmit={enviarFormulario} className="space-y-4">
+        <div className="flex items-center gap-2 rounded-lg border-2 border-stone-200 px-3 py-2">
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">Dónde</p>
+            <p className="text-sm font-semibold">{punto.texto}</p>
+          </div>
+          <button type="button" onClick={onCambiarPunto} className="shrink-0 text-sm font-semibold text-orange-800 hover:underline">
+            Cambiar punto
+          </button>
+        </div>
+
         <fieldset>
           <legend className="mb-1.5 text-sm font-semibold">¿Qué está pasando?</legend>
           <div className="grid grid-cols-2 gap-2">
@@ -82,20 +79,17 @@ export default function FormularioReporte({ tramos, tramoInicial, onCerrar, onEn
           </div>
         </fieldset>
 
-        <div>
-          <label htmlFor="reporte-tramo" className="mb-1.5 block text-sm font-semibold">¿Dónde?</label>
-          <div className="flex gap-2">
-            <select id="reporte-tramo" value={tramoId} onChange={(e) => setTramoId(e.target.value)} className="min-w-0 flex-1 rounded-lg border-2 border-stone-200 bg-white px-3 py-2.5 text-base">
-              <option value="">Elegí un tramo…</option>
-              {tramos.map((t) => (
-                <option key={t.id} value={t.id}>{t.ruta} km {t.kmInicio}–{t.kmFin} · {t.nombre}</option>
-              ))}
-            </select>
-            <button type="button" onClick={usarUbicacion} disabled={ubicando} className="shrink-0 rounded-lg border-2 border-stone-200 px-3 text-sm font-semibold text-orange-800 disabled:opacity-60">
-              {ubicando ? 'Buscando…' : 'Mi ubicación'}
+        {conLargo && (
+          <div className="flex items-center gap-2 rounded-lg border-2 border-stone-200 px-3 py-2">
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">Hasta dónde llega (opcional)</p>
+              <p className="text-sm font-semibold">{punto.fin ? punto.fin.texto : 'Solo en el punto marcado'}</p>
+            </div>
+            <button type="button" onClick={punto.fin ? onQuitarFinal : onMarcarFinal} className="shrink-0 text-sm font-semibold text-orange-800 hover:underline">
+              {punto.fin ? 'Quitar' : 'Marcar el final'}
             </button>
           </div>
-        </div>
+        )}
 
         <div>
           <label htmlFor="reporte-comentario" className="mb-1.5 block text-sm font-semibold">
@@ -107,7 +101,7 @@ export default function FormularioReporte({ tramos, tramoInicial, onCerrar, onEn
             onChange={(e) => setComentario(e.target.value)}
             maxLength={280}
             rows={2}
-            placeholder={tipo === OTRO ? 'Ej.: cayeron piedras sobre la calzada' : 'Ej.: a la altura del puente, mano al norte'}
+            placeholder={tipo === OTRO ? 'Ej.: cayeron piedras sobre la calzada' : 'Ej.: mano al norte, pasa un vehículo por vez'}
             className="w-full rounded-lg border-2 border-stone-200 px-3 py-2 text-base"
           />
         </div>

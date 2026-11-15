@@ -468,3 +468,10 @@ body { color: var(--pm-texto); background: var(--pm-fondo); }
   src: url('/fonts/PachamapaSans-Black.woff2') format('woff2');
 }
 .pm-marca { font-family: 'Pachamapa Sans', ui-rounded, system-ui, sans-serif; font-weight: 700; letter-spacing: 0; }
+
+/* Reporte en su punto exacto: el pictograma va centrado sobre el lugar. */
+.pm-en-punto { position: absolute; left: -14px; top: -14px; width: 28px; height: 28px; cursor: pointer; }
+.pm-en-punto-grande { left: -18px; top: -18px; width: 36px; height: 36px; border-width: 3px; }
+.pm-compacto .pm-en-punto { left: -10px; top: -10px; width: 20px; height: 20px; }
+.pm-eligiendo, .pm-eligiendo .leaflet-interactive { cursor: crosshair !important; }
+.pm-elegido { background: #c2410c; }

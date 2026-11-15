@@ -7,6 +7,7 @@ import { armarPronostico } from '../services/pronostico.js';
 import { riesgoPorLluvia, temporadaDe } from '../services/riesgo.js';
 import { armarAlertas } from '../services/alertas.js';
 import { calcularTramos } from '../services/tramos.js';
+import { sinPunto } from '../services/reportes.js';
 import { obtenerNoticias } from '../services/noticias.js';
 
 const router = Router();
@@ -35,6 +36,8 @@ export function armarTramo(punto, { clima = null, serie = null, reportes = [], h
     estado: peorEstado(peorEstado(porClima.estado, porReportes.estado), porRiesgo.estado),
     motivos: [...porReportes.motivos, ...porClima.motivos, ...porRiesgo.motivos],
     reportes,
+    // Color de la linea del tramo: clima, riesgo y reportes sin punto. Un reporte puntual no pinta los 5 km.
+    estadoLinea: peorEstado(peorEstado(porClima.estado, porRiesgo.estado), estadoPorReportes(sinPunto(reportes)).estado),
     estadoReportes: porReportes,
     pronostico: serie ? armarPronostico(serie.futuras) : null,
     riesgo,
@@ -44,9 +47,9 @@ export function armarTramo(punto, { clima = null, serie = null, reportes = [], h
   };
 }
 
-router.get('/', async (_req, res, next) => {
+router.get('/', async (req, res, next) => {
   try {
-    const { error, tramos, ...datos } = await calcularTramos();
+    const { error, tramos, ...datos } = await calcularTramos({ conPrueba: req.query.prueba === 'salta' });
     res.json({
       ...datos,
       error: error ? 'No se pudo actualizar el clima' : null,

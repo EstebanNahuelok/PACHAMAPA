@@ -46,8 +46,8 @@ function estimarTramo(t: Tramo, ahora: number, reportesVigentes: boolean): Tramo
   const porReportes = reportesVigentes ? t.estadoReportes : { estado: 'bien' as Estado, motivos: [] }
   const base = { ...t, estimado: true, restriccion: reportesVigentes ? t.restriccion : null, pronostico: { horas: futuras, aviso: avisoProximo(futuras) } }
   // Todavia no empezo la primera hora del pronostico: vale el ultimo clima recibido.
-  if (!actual && horas.length > 0 && ahora < new Date(horas[0].hora).getTime()) return { ...base, estimado: false, estado: t.estado, motivos: t.motivos }
-  if (!actual) return { ...base, clima: null, estado: peor('atencion', porReportes.estado), motivos: [...porReportes.motivos, 'Sin estimación: el pronóstico guardado ya venció'] }
+  if (!actual && horas.length > 0 && ahora < new Date(horas[0].hora).getTime()) return { ...base, estimado: false, estado: t.estado, estadoLinea: t.estadoLinea, motivos: t.motivos }
+  if (!actual) return { ...base, clima: null, estadoLinea: 'atencion', estado: peor('atencion', porReportes.estado), motivos: [...porReportes.motivos, 'Sin estimación: el pronóstico guardado ya venció'] }
   return {
     ...base,
     clima: {
@@ -67,6 +67,7 @@ function estimarTramo(t: Tramo, ahora: number, reportesVigentes: boolean): Tramo
       icono: actual.icono,
     },
     estado: peor(actual.estado, porReportes.estado),
+    estadoLinea: actual.estado,
     motivos: [...porReportes.motivos, ...actual.motivos],
   }
 }

@@ -14,4 +14,7 @@ export const TIPOS_REPORTE: { tipo: TipoReporte; etiqueta: string }[] = [
   { tipo: 'fila', etiqueta: 'Fila / demora' },
 ]
 
+// Hechos que ocupan un trecho de la ruta: se puede marcar donde empiezan y donde terminan.
+export const CON_LARGO: TipoReporte[] = ['corte', 'obras', 'fila']
+
 export const etiquetaReporte = (tipo: TipoReporte) => TIPOS_REPORTE.find((t) => t.tipo === tipo)?.etiqueta ?? tipo

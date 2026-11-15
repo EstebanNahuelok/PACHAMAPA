@@ -27,9 +27,9 @@ export function tramosDemo(tramos: Tramo[]): Tramo[] {
   return tramos.map((t, i) => {
     const escena = ESCENAS[i - inicio]
     if (!escena) return t
-    const reportes: GrupoReportes[] = (escena.reportes ?? []).map(([tipo, confirmado, comentario]) => ({ tipo, grave: !['barro', 'bache', 'obras', 'fila'].includes(tipo), cantidad: confirmado ? 3 : 1, confirmado, ultimo: ahora, comentarios: comentario ? [comentario] : [] }))
+    const reportes: GrupoReportes[] = (escena.reportes ?? []).map(([tipo, confirmado, comentario]) => ({ tipo, grave: !['barro', 'bache', 'obras', 'fila'].includes(tipo), cantidad: confirmado ? 3 : 1, confirmado, ultimo: ahora, comentarios: comentario ? [comentario] : [], puntos: [{ lat: t.lat, lon: t.lon, cantidad: confirmado ? 3 : 1, confirmado, ultimo: ahora, comentarios: comentario ? [comentario] : [] }] }))
     const deReportes = reportes.map((r) => `Reporte ${r.confirmado ? 'confirmado' : 'sin confirmar'}: ${etiquetaReporte(r.tipo).toLowerCase()}`)
     // Sin pronostico: en la demo vale lo inventado, no lo que se espera de verdad para la hora de llegada.
-    return { ...t, reportes, estado: escena.estado, motivos: [...deReportes, ...(escena.clima ? [escena.clima] : [])], estadoReportes: { estado: reportes.length ? escena.estado : 'bien', motivos: deReportes }, pronostico: null, riesgo: null, restriccion: null }
+    return { ...t, reportes, estado: escena.estado, estadoLinea: escena.clima ? escena.estado : 'bien', motivos: [...deReportes, ...(escena.clima ? [escena.clima] : [])], estadoReportes: { estado: reportes.length ? escena.estado : 'bien', motivos: deReportes }, pronostico: null, riesgo: null, restriccion: null }
   })
 }

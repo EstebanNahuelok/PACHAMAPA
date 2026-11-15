@@ -5,6 +5,7 @@ import geo from '../data/tramos-geo.json'
 import { ESTADOS } from '../lib/formato'
 import { svgDificultad } from '../lib/iconosDificultad'
 import type { Recorrido } from '../lib/navegacion'
+import { trechoDe } from '../lib/ruta'
 
 const LINEAS = geo as unknown as Record<string, [number, number][]>
 const ZOOM_MANEJANDO = 13
@@ -42,7 +43,7 @@ export default function MapaNavegacion({ recorrido, posicion, siguiendo, fluido 
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
       maxZoom: 19,
     }).addTo(m)
-    for (const ruta of rutas) L.polyline(ruta.linea as [number, number][], { color: '#a8a29e', weight: 6, opacity: 0.9, interactive: false }).addTo(m)
+    for (const ruta of rutas.filter((r) => !('prueba' in r))) L.polyline(ruta.linea as [number, number][], { color: '#a8a29e', weight: 6, opacity: 0.9, interactive: false }).addTo(m)
     m.setView([-23.56, -65.52], 9)
     m.on('dragstart', () => alMover.current())
     capa.current = L.layerGroup().addTo(m)
@@ -61,13 +62,26 @@ export default function MapaNavegacion({ recorrido, posicion, siguiendo, fluido 
       const linea = LINEAS[p.tramo.id]
       if (!linea) continue
       L.polyline(linea, { color: '#fff', weight: 13, interactive: false }).addTo(grupo)
-      L.polyline(linea, { color: ESTADOS[p.estado].color, weight: 8, interactive: false }).addTo(grupo)
+      L.polyline(linea, { color: ESTADOS[p.estadoLinea].color, weight: 8, interactive: false }).addTo(grupo)
     }
     for (const t of recorrido?.trechos ?? []) {
-      if (t.dificultades.length === 0) continue
+      // Los reportes con punto exacto van en su lugar (mas abajo); aca queda lo que afecta a todo el trecho.
+      const delTrecho = t.dificultades.filter((d) => !d.puntos?.length)
+      if (delTrecho.length === 0) continue
       const { tramo } = t.pasos[0]
-      const difs = t.dificultades.slice(0, 3).map((d) => `<span class="pm-dif pm-dif-${d.nivel}">${svgDificultad(d.tipo, 16)}</span>`).join('')
+      const difs = delTrecho.slice(0, 3).map((d) => `<span class="pm-dif pm-dif-${d.nivel}">${svgDificultad(d.tipo, 16)}</span>`).join('')
       L.marker([tramo.lat, tramo.lon], { interactive: false, icon: L.divIcon({ className: '', iconSize: [0, 0], html: `<div class="pm-marcador pm-solo pm-grande"><span class="pm-difs">${difs}</span></div>` }) }).addTo(grupo)
+    }
+    // Reportes con punto exacto: se pinta su pedazo de ruta y va el pictograma en el lugar.
+    const enPrueba = (recorrido?.pasos ?? []).some((p) => p.tramo.prueba)
+    for (const p of recorrido?.pasos ?? []) {
+      for (const d of p.dificultades) {
+        for (const lugar of d.puntos ?? []) {
+          const marca = trechoDe(lugar, enPrueba)
+          L.polyline(marca.linea, { color: ESTADOS[d.nivel].color, weight: 12, interactive: false }).addTo(grupo)
+          L.marker(marca.centro, { interactive: false, zIndexOffset: 600, icon: L.divIcon({ className: '', iconSize: [0, 0], html: `<span class="pm-dif pm-dif-${d.nivel} pm-en-punto pm-en-punto-grande">${svgDificultad(d.tipo, 20)}</span>` }) }).addTo(grupo)
+        }
+      }
     }
     const destino = recorrido?.pasos.at(-1)?.tramo
     if (destino) L.marker([destino.lat, destino.lon], { interactive: false, icon: L.divIcon({ className: '', iconSize: [0, 0], html: '<div class="pm-destino"></div>' }) }).addTo(grupo)

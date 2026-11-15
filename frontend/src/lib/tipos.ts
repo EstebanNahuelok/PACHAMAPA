@@ -32,6 +32,18 @@ export interface Clima {
 
 export type TipoReporte = 'neblina' | 'derrumbe' | 'corte' | 'crecida' | 'barro' | 'hielo' | 'nevada' | 'accidente' | 'bache' | 'obras' | 'fila'
 
+// Un hecho reportado en un lugar exacto. Los reportes viejos, sin coordenada, llegan con lat y lon vacios.
+export interface PuntoReporte {
+  lat: number | null
+  lon: number | null
+  // Donde termina, si el hecho ocupa un trecho (obras, filas, cortes).
+  fin?: { lat: number; lon: number } | null
+  cantidad: number
+  confirmado: boolean
+  ultimo: string
+  comentarios: string[]
+}
+
 export interface GrupoReportes {
   tipo: TipoReporte
   grave?: boolean
@@ -39,13 +51,16 @@ export interface GrupoReportes {
   confirmado: boolean
   ultimo: string
   comentarios: string[]
+  puntos?: PuntoReporte[]
 }
 
 export interface Tramo {
   id: string
   nombre: string
   ruta: string
-  rutaId: 'rn9' | 'rn52'
+  rutaId: string
+  // Tramo de una ruta de prueba en Salta: solo llega en el modo TEST EN SALTA.
+  prueba?: boolean
   kmInicio: number
   kmFin: number
   referencia: string
@@ -57,6 +72,8 @@ export interface Tramo {
   estado: Estado
   motivos: string[]
   reportes: GrupoReportes[]
+  // Color de la linea del tramo: clima y riesgo. Los reportes con punto exacto se pintan solo en su lugar.
+  estadoLinea?: Estado
   estadoReportes: { estado: Estado; motivos: string[] }
   pronostico: Pronostico | null
   riesgo: Riesgo | null

@@ -2,13 +2,13 @@
 // Uso: node scripts/generar-tramos.mjs
 // Escribe backend/src/data/tramos.json (datos de cada tramo) y frontend/src/data/tramos-geo.json (su dibujo).
 import { readFileSync, writeFileSync } from 'node:fs';
-import { PUNTOS } from '../backend/src/data/puntos.js';
+import { PUNTOS, PUNTOS_PRUEBA } from '../backend/src/data/puntos.js';
 
 const LARGO_KM = 5;
 const raiz = new URL('..', import.meta.url);
 const rutas = JSON.parse(readFileSync(new URL('frontend/src/data/rutas.json', raiz), 'utf8'));
 const NOMBRES = { rn9: 'RN 9', rn52: 'RN 52' };
-const ORIGEN = { rn9: 'de San Salvador de Jujuy', rn52: 'del empalme con la RN 9' };
+const ORIGEN = { rn9: 'de San Salvador de Jujuy', rn52: 'del empalme con la RN 9', 'cerrillos-vaqueros': 'de Cerrillos', 'libertad-san-luis': 'del Hiper Libertad' };
 
 const RAD = Math.PI / 180;
 const distanciaKm = ([lat1, lon1], [lat2, lon2]) =>
@@ -26,8 +26,9 @@ for (const ruta of rutas) {
 }
 // Cada localidad pertenece a la ruta que tiene mas cerca (Purmamarca esta sobre la RN 52, no sobre la RN 9).
 const localidadesDe = (ruta) =>
-  PUNTOS.map((p) => {
-    const cercana = rutas.map((r) => ({ rutaId: r.id, ...proyectar(r, [p.lat, p.lon]) })).reduce((a, b) => (b.desvio < a.desvio ? b : a));
+  [...PUNTOS, ...PUNTOS_PRUEBA].map((p) => {
+    // Las referencias de prueba ya dicen a que ruta pertenecen.
+    const cercana = rutas.filter((r) => !p.rutaId || r.id === p.rutaId).map((r) => ({ rutaId: r.id, ...proyectar(r, [p.lat, p.lon]) })).reduce((a, b) => (b.desvio < a.desvio ? b : a));
     return { id: p.id, nombre: p.nombre, rutaId: cercana.rutaId, km: cercana.km };
   }).filter((p) => p.rutaId === ruta.id);
 const rn52 = rutas.find((r) => r.id === 'rn52');
@@ -61,12 +62,13 @@ for (const ruta of rutas) {
     tramos.push({
       id,
       nombre,
-      ruta: NOMBRES[ruta.id],
+      ruta: (NOMBRES[ruta.id] ?? ruta.nombre),
       rutaId: ruta.id,
       kmInicio: Math.round(inicio),
       kmFin: Math.round(fin),
       referencia: `a ${Math.round(inicio)}–${Math.round(fin)} km ${ORIGEN[ruta.id]}`,
       localidad: propia?.id ?? null,
+      ...(ruta.prueba ? { prueba: true } : {}),
       lat: centro[0],
       lon: centro[1],
     });

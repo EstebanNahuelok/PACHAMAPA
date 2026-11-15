@@ -13,6 +13,10 @@ export interface Dificultad {
   detalle: string
   nivel: Estado
   origen: 'reporte' | 'clima' | 'riesgo' | 'previsto'
+  // Lugares exactos de un reporte, si los tiene: se marcan en ese punto del mapa y no en todo el tramo.
+  puntos?: { lat: number; lon: number; fin?: { lat: number; lon: number } | null }[]
+  // Solo en la navegacion: kilometros que faltan hasta el punto mas cercano que queda por delante.
+  km?: number
 }
 
 // Motivos que calcula el servidor a partir del clima (backend/src/services/estado.js).
@@ -46,6 +50,7 @@ export function dificultadesDe(t: Tramo, prevista?: HoraPronostico): Dificultad[
     detalle: `${r.confirmado ? 'Confirmado' : 'Sin confirmar'} · ${r.cantidad} ${r.cantidad === 1 ? 'reporte' : 'reportes'} · ${haceCuanto(r.ultimo)}${r.comentarios[0] ? ` · “${r.comentarios[0]}”` : ''}`,
     nivel: r.confirmado && r.grave !== false ? 'problemas' : 'atencion',
     origen: 'reporte',
+    puntos: (r.puntos ?? []).flatMap((p) => (p.lat != null && p.lon != null ? [{ lat: p.lat, lon: p.lon, fin: p.fin }] : [])),
   }))
   const tipos = new Set<TipoDificultad>(lista.map((d) => d.tipo))
   const sumar = (nuevas: Dificultad[]) => {

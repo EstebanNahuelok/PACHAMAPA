@@ -11,6 +11,12 @@ model Reporte {
   id         String   @id @default(cuid())
   tipo       String
   tramoId    String   @map("tramo_id")
+  // Punto exacto del reporte; vacio en los reportes anteriores, que solo tenian tramo
+  lat        Float?
+  lon        Float?
+  // Donde termina, en los reportes con largo propio (obras, filas, cortes)
+  latFin     Float?   @map("lat_fin")
+  lonFin     Float?   @map("lon_fin")
   comentario String?
   canal      String   @default("web")
   creadoEn   DateTime @default(now()) @map("creado_en")

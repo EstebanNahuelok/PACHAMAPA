@@ -17,7 +17,9 @@ En la Quebrada de Humahuaca el clima cambia en pocos kilómetros: puede estar de
 - **Dificultades viales sobre el mapa**: cada tramo muestra pictogramas de lo que complica el camino (derrumbe, agua sobre la calzada, barro o piedras, neblina, hielo, corte, baches, obras); al tocarlos se abre la explicación.
 - **Modo navegación**: mapa en vivo al estilo Android Auto que sigue tu posición. Arriba muestra la alerta del tramo que estás recorriendo y la próxima dificultad; al costado, una barra con el estado de todo el viaje; abajo, la hora de llegada, el tiempo y los kilómetros que faltan. Desde ahí se abre "Camino por delante", se reporta en el tramo actual y se activan los avisos por voz. Lo que muestra de cada tramo es lo previsto para la hora en que vas a pasar. Incluye dos simulaciones para probarlo sin estar en la ruta: una que recorre el camino con los datos reales y una demo fluida de Maimará a Huacalera con alertas simuladas (agua en la calzada, barro, derrumbe, neblina, obras).
 - **Funciona sin señal**: guarda los últimos datos recibidos y, sin conexión, estima el estado de cada tramo con el pronóstico por hora que traían. La aplicación y el mapa ya visto se abren sin conexión.
-- **Reportes de la gente** desde la web: neblina, corte de ruta, derrumbe, crecida o agua en la ruta, barro o piedras, hielo, nevada, accidente, baches, obras o desvío, fila. Cada reporte queda en su tramo, expira solo después de unas horas y, si hay 2 o más del mismo tipo en el mismo tramo, se marca como **confirmado**.
+- **Reportes de la gente** desde la web: neblina, corte de ruta, derrumbe, crecida o agua en la ruta, barro o piedras, hielo, nevada, accidente, baches, obras o desvío, fila. Cada reporte se marca en un **punto exacto** de la ruta (tocando el mapa o con el GPS) y pinta solo ese lugar, no todo el tramo. Las obras, filas y cortes pueden llevar inicio y fin. Expira solo después de unas horas y, si hay 2 o más del mismo tipo a menos de 1 km, se marca como **confirmado**.
+- **Emergencia (SOS)**: un contacto propio guardado en el teléfono para llamar o mandarle la ubicación por WhatsApp, los números oficiales (911, 107, 100, 103 y Vialidad Nacional) con su fuente, y la ubicación lista para decir por teléfono. Funciona sin datos.
+- **Consejos de manejo**: antes de arrancar (cinturón, luces, teléfono en el soporte) y según el viaje: niebla, lluvia, hielo, viento, derrumbes, cuesta o cornisa y altura. Durante la navegación se muestra y se dice por voz el consejo del tramo.
 - **Texto libre**: si la persona elige "Otra cosa" y escribe qué pasa, Groq clasifica el mensaje (con un clasificador por palabras clave como respaldo).
 - **Pronóstico por tramo**: estado previsto hora por hora para las próximas 24 horas, con aviso cuando un tramo va a empeorar ("se espera neblina de 07:00 a 09:00").
 - **Riesgo de aludes y crecidas**: índice bajo, moderado o alto según la lluvia caída en 72 horas y la prevista, más exigente en los tramos con antecedentes.
@@ -136,8 +138,9 @@ En desarrollo el frontend redirige `/api` al backend local, así que no hace fal
 
 | Método y ruta | Descripción |
 |---|---|
+| `GET /api/tramos?prueba=salta` | Lo mismo que `/api/tramos`, más las rutas de prueba de Salta (ver "Test en Salta"). |
 | `GET /api/tramos` | Clima, estado, motivos, reportes activos, pronóstico, riesgo, zonas críticas, restricción e historial de cada tramo, más la lista de alertas. |
-| `POST /api/reportes` | Crea un reporte: `{ tipo?, tramoId? , lat?, lon?, comentario? }`. Sin `tipo` se clasifica el comentario; sin `tramoId` se usa el punto más cercano a `lat`/`lon`. |
+| `POST /api/reportes` | Crea un reporte: `{ tipo?, tramoId?, lat?, lon?, latFin?, lonFin?, comentario? }`. `lat`/`lon` son el punto exacto; `latFin`/`lonFin`, el final en obras, filas y cortes. Sin `tipo` se clasifica el comentario; sin `tramoId` se usa el tramo más cercano. |
 | `GET /api/reportes` | Reportes activos. |
 | `POST /api/visitas` | Registra una visita. |
 | `GET /api/metricas` | Visitas, visitantes únicos, reportes y anotados en la lista de espera. |
@@ -152,9 +155,14 @@ El mapa es gratuito para quien viaja. El plan pago apunta a quienes trabajan en 
 
 Para medirlo desde el primer día, la aplicación registra visitas, visitantes únicos, reportes enviados y anotados en la lista de espera; los números se ven en `GET /api/metricas` y al pie de la lista de tramos.
 
+## Test en Salta
+
+Para desarrollar con GPS real desde Salta capital hay dos rutas de prueba, con clima real: Cerrillos – Vaqueros (27 km) e Hiper Libertad – San Luis (10 km). No son parte del producto: solo aparecen abriendo la aplicación con `?prueba=salta` o eligiendo "TEST EN SALTA" en la navegación, no generan alertas por WhatsApp y no están unidas entre sí ni con las rutas de Jujuy.
+
 ## Limitaciones conocidas
 
 - La visibilidad de Open-Meteo sale de un modelo, no de una estación en la ruta: sirve como alerta, y por eso se complementa con los reportes de la gente.
+- Los consejos de manejo son recomendaciones generales, no un texto oficial; los tramos de cuesta se deducen del desnivel entre tramos (más de 200 m).
 - Un reporte se confirma por cantidad de envíos, no por personas distintas; hay un límite de envíos por IP para frenar abusos.
 - El riesgo de aludes y crecidas es una estimación por lluvia, no una predicción del evento, y sus umbrales no están calibrados.
 - Las zonas críticas salen de noticias y publicaciones, no de un relevamiento oficial; falta validarlas con Vialidad y Defensa Civil.

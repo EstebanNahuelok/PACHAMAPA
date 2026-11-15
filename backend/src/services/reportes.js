@@ -1,16 +1,22 @@
 import { prisma, dbConfigurada } from './prisma.js';
 import { TIPOS_REPORTE, MINIMO_PARA_CONFIRMAR } from '../data/tiposReporte.js';
-import { idDeTramo } from '../data/puntos.js';
+import { idDeTramo, distanciaKm } from '../data/puntos.js';
 
-export function crearReporte({ tipo, tramoId, comentario, canal = 'web' }) {
+export function crearReporte({ tipo, tramoId, comentario, lat = null, lon = null, latFin = null, lonFin = null, canal = 'web' }) {
   const expiraEn = new Date(Date.now() + TIPOS_REPORTE[tipo].horas * 60 * 60 * 1000);
-  return prisma.reporte.create({ data: { tipo, tramoId, comentario: comentario || null, canal, expiraEn } });
+  return prisma.reporte.create({ data: { tipo, tramoId, lat, lon, latFin, lonFin, comentario: comentario || null, canal, expiraEn } });
 }
 
 export const reportesActivos = (filtro = {}) =>
   prisma.reporte.findMany({ where: { ...filtro, expiraEn: { gt: new Date() } }, orderBy: { creadoEn: 'desc' } });
 
-// Agrupa los reportes activos por tramo y tipo: 2 o mas del mismo tipo en un tramo quedan confirmados.
+// Dos reportes del mismo tipo hablan del mismo hecho si estan a menos de esta distancia. Los que no tienen
+// punto (los anteriores a guardar la coordenada) se juntan entre si dentro de su tramo.
+const RADIO_MISMO_HECHO_KM = 1;
+export const mismoHecho = (a, b) => (a.lat == null || b.lat == null ? a.lat == null && b.lat == null : distanciaKm(a.lat, a.lon, b.lat, b.lon) <= RADIO_MISMO_HECHO_KM);
+
+// Agrupa los reportes activos por tramo y tipo. Dentro de cada grupo, `puntos` separa los hechos por ubicacion:
+// 2 o mas reportes del mismo tipo en el mismo punto lo confirman.
 export function agruparPorTramo(reportes) {
   const porTramo = new Map();
   for (const r of reportes) {
@@ -19,15 +25,31 @@ export function agruparPorTramo(reportes) {
     porTramo.set(tramoId, grupos);
     let grupo = grupos.find((g) => g.tipo === r.tipo);
     if (!grupo) {
-      grupo = { tipo: r.tipo, etiqueta: TIPOS_REPORTE[r.tipo]?.etiqueta ?? r.tipo, grave: Boolean(TIPOS_REPORTE[r.tipo]?.grave), cantidad: 0, confirmado: false, ultimo: r.creadoEn, comentarios: [] };
+      grupo = { tipo: r.tipo, etiqueta: TIPOS_REPORTE[r.tipo]?.etiqueta ?? r.tipo, grave: Boolean(TIPOS_REPORTE[r.tipo]?.grave), cantidad: 0, confirmado: false, ultimo: r.creadoEn, comentarios: [], puntos: [] };
       grupos.push(grupo);
     }
     grupo.cantidad += 1;
-    grupo.confirmado = grupo.cantidad >= MINIMO_PARA_CONFIRMAR;
+    let punto = grupo.puntos.find((p) => mismoHecho(p, r));
+    if (!punto) {
+      punto = { lat: r.lat ?? null, lon: r.lon ?? null, fin: r.latFin != null && r.lonFin != null ? { lat: r.latFin, lon: r.lonFin } : null, cantidad: 0, confirmado: false, ultimo: r.creadoEn, comentarios: [] };
+      grupo.puntos.push(punto);
+    }
+    punto.cantidad += 1;
+    punto.confirmado = punto.cantidad >= MINIMO_PARA_CONFIRMAR;
+    if (r.comentario && punto.comentarios.length < 3) punto.comentarios.push(r.comentario);
+    grupo.confirmado = grupo.puntos.some((p) => p.confirmado);
     if (r.comentario && grupo.comentarios.length < 3) grupo.comentarios.push(r.comentario);
   }
   return porTramo;
 }
+
+// Reportes que no tienen punto exacto (los anteriores a guardar la coordenada): son los unicos que cuentan
+// para el color de todo el tramo. Los que tienen punto se marcan solo en su lugar.
+export const sinPunto = (grupos = []) =>
+  grupos.flatMap((g) => {
+    const puntos = (g.puntos ?? [{ lat: null, confirmado: g.confirmado }]).filter((p) => p.lat == null);
+    return puntos.length ? [{ ...g, confirmado: puntos.some((p) => p.confirmado) }] : [];
+  });
 
 // Nunca tira error: si la base no responde, el mapa sigue funcionando solo con el clima.
 export async function gruposActivosPorTramo() {

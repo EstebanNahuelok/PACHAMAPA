@@ -16,6 +16,16 @@ export const PUNTOS = [
   { id: 'salinas-grandes', nombre: 'Salinas Grandes', ruta: 'RN 52', lat: -23.6157, lon: -65.8754, altitud: 3450 },
 ];
 
+// Referencias de las rutas de prueba en Salta (para desarrollar con GPS real desde Salta capital). No son parte del producto.
+// rutaId fija a que ruta pertenece cada una, porque las dos rutas pasan cerca en la zona sur de la ciudad.
+export const PUNTOS_PRUEBA = [
+  { id: 'cerrillos', nombre: 'Cerrillos', rutaId: 'cerrillos-vaqueros', lat: -24.9, lon: -65.487 },
+  { id: 'salta', nombre: 'Salta capital', rutaId: 'cerrillos-vaqueros', lat: -24.7892, lon: -65.4104 },
+  { id: 'vaqueros', nombre: 'Vaqueros', rutaId: 'cerrillos-vaqueros', lat: -24.697, lon: -65.408 },
+  { id: 'hiper-libertad', nombre: 'Hiper Libertad', rutaId: 'libertad-san-luis', lat: -24.8321, lon: -65.4276 },
+  { id: 'san-luis', nombre: 'San Luis', rutaId: 'libertad-san-luis', lat: -24.845, lon: -65.516 },
+];
+
 export const puntoPorId = (id) => PUNTOS.find((p) => p.id === id);
 
 const RAD = Math.PI / 180;
