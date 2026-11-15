@@ -331,3 +331,91 @@ body { color: var(--pm-texto); background: var(--pm-fondo); }
   .pm-ruta-trazo { stroke-dashoffset: 0; }
   .pm-inclinar > * { transform: none; transition: none; }
 }
+
+/* ---------- Efectos sobre el mapa segun la dificultad ----------
+   Capas translucidas (nubes, lluvia, nieve, viento, hielo, pulso) que dejan ver la ruta, y una burbuja con el texto. */
+.pm-efecto { opacity: 0.85; overflow: visible; }
+.pm-efecto * { transform-box: fill-box; transform-origin: center; }
+.pm-fx-nube { animation: pm-fx-deriva 12s ease-in-out infinite alternate; }
+.pm-fx-niebla { fill: url(#pm-g-niebla); }
+.pm-fx-gris { fill: url(#pm-g-gris); }
+.pm-fx-oscura { fill: url(#pm-g-oscura); }
+.pm-fx-sombra { fill: url(#pm-g-sombra); animation: pm-fx-deriva 12s ease-in-out infinite alternate; }
+@keyframes pm-fx-deriva {
+  from { transform: translate(-9%, 2%) scale(0.94); opacity: 0.7; }
+  to { transform: translate(9%, -3%) scale(1.06); opacity: 1; }
+}
+.pm-fx-gota { animation: pm-fx-caer 0.9s linear infinite; }
+.pm-fx-gota line { stroke: #3b82f6; stroke-width: 2; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.pm-fx-copo { animation: pm-fx-caer 3.2s linear infinite; }
+.pm-fx-copo circle { fill: #fff; stroke: #94a3b8; stroke-width: 0.8; }
+@keyframes pm-fx-caer {
+  0% { transform: translate(4px, -26px); opacity: 0; }
+  20%, 75% { opacity: 1; }
+  100% { transform: translate(-6px, 34px); opacity: 0; }
+}
+.pm-fx-rayo { fill: #facc15; stroke: #fff; stroke-width: 1.5; animation: pm-fx-destello 3.4s steps(1) infinite; }
+@keyframes pm-fx-destello {
+  0%, 100% { opacity: 0; }
+  4%, 8% { opacity: 1; }
+  6%, 10% { opacity: 0; }
+  12% { opacity: 0.9; }
+  16% { opacity: 0; }
+}
+.pm-fx-viento { fill: none; stroke: #64748b; stroke-width: 2.5; stroke-linecap: round; stroke-dasharray: 46 190; vector-effect: non-scaling-stroke; animation: pm-fx-soplar 1.9s linear infinite; }
+@keyframes pm-fx-soplar { from { stroke-dashoffset: 236; } to { stroke-dashoffset: 0; } }
+.pm-fx-hielo { fill: url(#pm-g-hielo); animation: pm-fx-latir 4s ease-in-out infinite alternate; }
+.pm-fx-brillo { fill: #fff; stroke: #38bdf8; stroke-width: 0.6; animation: pm-fx-titilar 2.4s ease-in-out infinite; }
+@keyframes pm-fx-latir { from { opacity: 0.6; } to { opacity: 1; } }
+@keyframes pm-fx-titilar { 0%, 100% { opacity: 0; transform: scale(0.4); } 50% { opacity: 1; transform: scale(1); } }
+.pm-fx-pulso { vector-effect: non-scaling-stroke; animation: pm-fx-pulsar 2.4s ease-out infinite; }
+@keyframes pm-fx-pulsar { from { transform: scale(0.25); opacity: 0.9; } to { transform: scale(1); opacity: 0; } }
+:root[data-tema='oscuro'] .pm-fx-viento { stroke: #cbd5e1; }
+:root[data-tema='oscuro'] .pm-efecto { opacity: 0.7; }
+
+.pm-burbuja {
+  position: absolute;
+  top: 0;
+  --color: #f59e0b;
+  transform: translate(calc(-100% - 16px), -50%);
+  max-width: 190px;
+  padding: 5px 10px;
+  border-radius: 12px;
+  border: 2px solid var(--color);
+  background: color-mix(in srgb, var(--pm-superficie) 88%, transparent);
+  color: var(--pm-texto);
+  box-shadow: 0 4px 12px rgb(0 0 0 / 0.25);
+  backdrop-filter: blur(3px);
+  font-size: 12px;
+  line-height: 1.25;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.pm-burbuja b { display: block; overflow: hidden; text-overflow: ellipsis; font-size: 13px; }
+.pm-burbuja span { display: block; overflow: hidden; text-overflow: ellipsis; color: var(--pm-texto-2); }
+.pm-burbuja::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: -8px;
+  width: 12px;
+  height: 12px;
+  background: inherit;
+  border: 2px solid var(--color);
+  border-left: 0;
+  border-bottom: 0;
+  transform: translateY(-50%) rotate(45deg);
+  backdrop-filter: inherit;
+}
+.pm-burbuja-der { transform: translate(16px, -50%); }
+.pm-burbuja-der::after { right: auto; left: -8px; transform: translateY(-50%) rotate(225deg); }
+.pm-burbuja-problemas { --color: #dc2626; }
+/* Con el mapa alejado las burbujas se amontonan: primero quedan solo las de problemas y despues ninguna. */
+.pm-compacto .pm-burbuja,
+.pm-medio .pm-burbuja-atencion { display: none; }
+.pm-medio .pm-burbuja { padding: 3px 8px; }
+.pm-medio .pm-burbuja span { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .pm-efecto * { animation: none !important; }
+}

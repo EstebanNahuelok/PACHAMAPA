@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import L from 'leaflet'
 import rutas from '../data/rutas.json'
 import geo from '../data/tramos-geo.json'
@@ -6,6 +6,7 @@ import { svgClima } from '../lib/iconos'
 import { ESTADOS, grados } from '../lib/formato'
 import { dificultadesDe } from '../lib/dificultades'
 import { svgDificultad } from '../lib/iconosDificultad'
+import { svgEfecto, zonasDeEfecto } from '../lib/efectosMapa'
 import type { Tramo } from '../lib/tipos'
 
 // Lado en que se dibuja la etiqueta de cada punto, para que no se pisen entre vecinos.
@@ -56,6 +57,7 @@ export default function Mapa({ tramos, seleccionado, onSeleccionar }: Props) {
   const contenedor = useRef<HTMLDivElement>(null)
   const mapa = useRef<L.Map | null>(null)
   const capa = useRef<L.LayerGroup | null>(null)
+  const capaEfectos = useRef<L.LayerGroup | null>(null)
   const alSeleccionar = useRef(onSeleccionar)
   const ultimosTramos = useRef(tramos)
 
@@ -79,9 +81,17 @@ export default function Mapa({ tramos, seleccionado, onSeleccionar }: Props) {
     // En pantallas chicas el encuadre completo queda demasiado lejos: se prioriza que se lean los puntos.
     if (m.getBoundsZoom(LIMITES, false, L.point(48, 48)) < 8) m.setView([-23.56, -65.52], 8)
     else m.fitBounds(LIMITES, { padding: [24, 24] })
-    const ajustarTamano = () => m.getContainer().classList.toggle('pm-compacto', m.getZoom() <= 8)
+    const ajustarTamano = () => {
+      m.getContainer().classList.toggle('pm-compacto', m.getZoom() <= 8)
+      m.getContainer().classList.toggle('pm-medio', m.getZoom() === 9)
+    }
     m.on('zoomend', ajustarTamano)
     ajustarTamano()
+    // Los efectos van en su propia capa: por encima de la ruta, por debajo de los marcadores y sin recibir toques.
+    const panel = m.createPane('pm-efectos')
+    panel.style.zIndex = '450'
+    panel.style.pointerEvents = 'none'
+    capaEfectos.current = L.layerGroup().addTo(m)
     capa.current = L.layerGroup().addTo(m)
     mapa.current = m
     return () => {
@@ -126,6 +136,39 @@ export default function Mapa({ tramos, seleccionado, onSeleccionar }: Props) {
         .addTo(grupo)
     })
   }, [tramos, seleccionado])
+
+  // Solo se vuelven a dibujar cuando cambia alguna zona, asi las animaciones no arrancan de nuevo en cada actualizacion.
+  const zonas = useMemo(() => zonasDeEfecto(tramos, visibles, LINEAS), [tramos])
+  const firmaZonas = zonas.map((z) => z.id).join('#')
+  const ultimasZonas = useRef(zonas)
+  useEffect(() => {
+    ultimasZonas.current = zonas
+  })
+  useEffect(() => {
+    const grupo = capaEfectos.current
+    if (!grupo) return
+    grupo.clearLayers()
+    for (const zona of ultimasZonas.current) {
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+      svg.setAttribute('viewBox', '0 0 200 200')
+      svg.setAttribute('preserveAspectRatio', 'none')
+      svg.innerHTML = svgEfecto(zona)
+      L.svgOverlay(svg, zona.limites, { pane: 'pm-efectos', interactive: false, className: 'pm-efecto' }).addTo(grupo)
+      // La burbuja va al costado de la ruta, del lado contrario a la etiqueta de la localidad.
+      const lado = LADO[zona.ancla.localidad ?? ''] === 'izq' ? 'der' : 'izq'
+      L.marker([zona.ancla.lat, zona.ancla.lon], {
+        icon: L.divIcon({
+          html: `<div class="pm-burbuja pm-burbuja-${lado} pm-burbuja-${zona.nivel}"><b>${escapar(zona.titulo)}</b><span>${escapar(zona.lugar)}</span></div>`,
+          className: '',
+          iconSize: [0, 0],
+        }),
+        title: `${zona.titulo}: ${zona.lugar}`,
+        zIndexOffset: zona.nivel === 'problemas' ? 150 : 50,
+      })
+        .on('click', () => alSeleccionar.current(zona.tramoId))
+        .addTo(grupo)
+    }
+  }, [firmaZonas])
 
   useEffect(() => {
     const m = mapa.current
