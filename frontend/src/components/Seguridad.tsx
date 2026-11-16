@@ -37,12 +37,12 @@ export default function Seguridad() {
       <div className="mt-5 grid gap-3 lg:grid-cols-2">
         <div className={`${tarjeta} p-5`}>
           <div className="flex items-center gap-2">
-            <h3 className="text-lg font-bold">Lista de control</h3>
-            <span className="rounded-full bg-stone-100 px-2.5 py-0.5 text-xs font-bold text-stone-600">
+            <h3 className="whitespace-nowrap text-lg font-bold">Lista de control</h3>
+            <span className="whitespace-nowrap rounded-full bg-stone-100 px-2.5 py-0.5 text-xs font-bold text-stone-600">
               {hechos} de {LISTA.length}
             </span>
             {hechos > 0 && (
-              <button type="button" onClick={() => guardar([])} className="ml-auto text-sm font-semibold text-orange-800 underline">
+              <button type="button" onClick={() => guardar([])} className="ml-auto whitespace-nowrap text-sm font-semibold text-orange-800 underline">
                 Desmarcar todo
               </button>
             )}
