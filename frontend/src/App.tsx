@@ -237,7 +237,7 @@ export default function App({ tema, onAlternarTema }: { tema: Tema; onAlternarTe
           <button type="button" onClick={() => setEnEmergencia(true)} aria-label="Emergencia: a quién llamar" className="absolute bottom-[5.25rem] left-3 z-[500] rounded-full bg-red-700 px-5 py-3 text-base font-black text-white shadow-lg ring-2 ring-white">
             SOS
           </button>
-          <button type="button" onClick={() => setEnAyuda(true)} aria-label="Pacha, el asistente: preguntas sobre la ruta y la aplicación" className="absolute bottom-[5.25rem] right-3 z-[500] flex items-center gap-1.5 rounded-full bg-white py-1.5 pl-2 pr-4 text-base font-bold text-stone-900 shadow-lg ring-2 ring-emerald-600">
+          <button type="button" onClick={() => setEnAyuda(true)} aria-label="Pacha, el asistente: preguntas sobre la ruta y la aplicación" className="pm-boton-pacha absolute bottom-[5.25rem] right-3 z-[500] flex items-center gap-1.5 rounded-full py-1.5 pl-2 pr-4 text-base font-bold shadow-lg ring-2 ring-emerald-600">
             <Pacha className="h-10 w-auto" suelo={false} />
             Pacha
           </button>
