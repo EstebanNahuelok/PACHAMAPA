@@ -1,3 +1,4 @@
+import rutas from '../data/rutas.json'
 import { etiquetaReporte } from './reportes'
 import type { Alerta, AvisoPronostico, Estado, HoraPronostico, RespuestaTramos, Tramo } from './tipos'
 
@@ -116,30 +117,69 @@ export function estimar(datos: RespuestaTramos, ahora = Date.now()): RespuestaTr
   return { ...datos, tramos, alertas: alertasDe(tramos) }
 }
 
-// Guarda de antemano el mapa de fondo de toda la ruta (unas 80 teselas), para que se vea sin conexion
-// aunque no se haya recorrido antes. Lo guarda el service worker al pasar el pedido por el.
-const CLAVE_MAPA = 'pm-mapa-guardado'
+// Guarda de antemano el mapa de fondo de toda la ruta, para que se vea sin conexion aunque no se haya
+// recorrido antes. Los niveles lejanos cubren toda la zona; los cercanos, solo las teselas que pisa la ruta.
+// Se guardan desde la pagina (no hace falta que el service worker ya la controle) y este las sirve sin conexion.
+const CLAVE_MAPA = 'pm-mapa-guardado-v2'
+const CACHE_RUTA = 'pachamapa-ruta-v1'
 const SEMANA_MS = 7 * 24 * HORA_MS
 const ZONA = { norte: -22.7, sur: -24.22, oeste: -65.92, este: -65.25 }
+export const ZOOM_ZONA = 10
+export const ZOOM_GUARDADO = 12
 
 const columna = (lon: number, z: number) => Math.floor(((lon + 180) / 360) * 2 ** z)
 const fila = (lat: number, z: number) => Math.floor(((1 - Math.asinh(Math.tan((lat * Math.PI) / 180)) / Math.PI) / 2) * 2 ** z)
 
-export async function precargarMapa() {
-  const conexion = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection
-  if (!navigator.onLine || conexion?.saveData || !navigator.serviceWorker?.controller) return
-  if (Date.now() - Number(localStorage.getItem(CLAVE_MAPA) ?? 0) < SEMANA_MS) return
-  const teselas: string[] = []
-  for (let z = 8; z <= 11; z += 1) {
+export function teselasDeLaRuta() {
+  const teselas = new Set<string>()
+  for (let z = 8; z <= ZOOM_ZONA; z += 1) {
     for (let x = columna(ZONA.oeste, z); x <= columna(ZONA.este, z); x += 1) {
-      for (let y = fila(ZONA.norte, z); y <= fila(ZONA.sur, z); y += 1) teselas.push(`https://tile.openstreetmap.org/${z}/${x}/${y}.png`)
+      for (let y = fila(ZONA.norte, z); y <= fila(ZONA.sur, z); y += 1) teselas.add(`${z}/${x}/${y}`)
     }
   }
+  for (let z = ZOOM_ZONA + 1; z <= ZOOM_GUARDADO; z += 1) {
+    for (const ruta of rutas) {
+      if ('prueba' in ruta) continue
+      for (const [lat, lon] of ruta.linea as [number, number][]) {
+        // La tesela del punto y sus vecinas, para que la ruta no quede pegada al borde de lo guardado.
+        for (let dx = -1; dx <= 1; dx += 1) for (let dy = -1; dy <= 1; dy += 1) teselas.add(`${z}/${columna(lon, z) + dx}/${fila(lat, z) + dy}`)
+      }
+    }
+  }
+  return [...teselas].map((t) => `https://tile.openstreetmap.org/${t}.png`)
+}
+
+let precargando = false
+export async function precargarMapa() {
+  const conexion = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection
+  if (precargando || !navigator.onLine || conexion?.saveData || !('caches' in window)) return
+  if (Date.now() - Number(localStorage.getItem(CLAVE_MAPA) ?? 0) < SEMANA_MS) return
+  precargando = true
   try {
+    const cache = await caches.open(CACHE_RUTA)
+    const guardadas = new Set((await cache.keys()).map((p) => p.url))
+    const faltan = teselasDeLaRuta().filter((url) => !guardadas.has(url))
+    let fallas = 0
     // De a pocas a la vez, para no cargar el servidor de OpenStreetMap ni la conexion del telefono.
-    for (let i = 0; i < teselas.length; i += 4) await Promise.all(teselas.slice(i, i + 4).map((url) => fetch(url, { mode: 'no-cors' })))
-    localStorage.setItem(CLAVE_MAPA, String(Date.now()))
+    for (let i = 0; i < faltan.length; i += 4) {
+      await Promise.all(
+        faltan.slice(i, i + 4).map(async (url) => {
+          try {
+            const respuesta = await fetch(url, { mode: 'cors' })
+            if (respuesta.ok) await cache.put(url, respuesta)
+            else fallas += 1
+          } catch {
+            fallas += 1
+          }
+        }),
+      )
+      if (!navigator.onLine) return
+    }
+    // Si quedo alguna sin guardar se reintenta la proxima vez que se abra la aplicacion.
+    if (fallas === 0) localStorage.setItem(CLAVE_MAPA, String(Date.now()))
   } catch {
-    // Se corto la conexion a mitad de camino: se reintenta la proxima vez que se abra la aplicacion.
+    // Sin lugar para guardar o sin permiso: el mapa queda solo con lo ya visto.
+  } finally {
+    precargando = false
   }
 }

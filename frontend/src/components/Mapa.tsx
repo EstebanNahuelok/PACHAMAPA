@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react'
 import L from 'leaflet'
+import { capaBase } from '../lib/mapaBase'
 import rutas from '../data/rutas.json'
 import geo from '../data/tramos-geo.json'
 import { svgClima } from '../lib/iconos'
@@ -84,10 +85,7 @@ export default function Mapa({ tramos, seleccionado, onSeleccionar, eligiendo = 
 
   useEffect(() => {
     const m = L.map(contenedor.current!, { zoomControl: false, minZoom: 7, maxZoom: 15 })
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-      maxZoom: 19,
-    }).addTo(m)
+    capaBase(m)
     L.control.zoom({ position: 'topright' }).addTo(m)
     for (const ruta of rutas) {
       // Las rutas de prueba de Salta se dibujan con sus tramos, solo en el modo TEST EN SALTA.

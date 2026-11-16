@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import L from 'leaflet'
+import { capaBase } from '../lib/mapaBase'
 import rutas from '../data/rutas.json'
 import geo from '../data/tramos-geo.json'
 import { ESTADOS } from '../lib/formato'
@@ -39,10 +40,7 @@ export default function MapaNavegacion({ recorrido, posicion, siguiendo, fluido 
 
   useEffect(() => {
     const m = L.map(contenedor.current!, { zoomControl: false, minZoom: 7, maxZoom: 16 })
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-      maxZoom: 19,
-    }).addTo(m)
+    capaBase(m)
     for (const ruta of rutas.filter((r) => !('prueba' in r))) L.polyline(ruta.linea as [number, number][], { color: '#a8a29e', weight: 6, opacity: 0.9, interactive: false }).addTo(m)
     m.setView([-23.56, -65.52], 9)
     m.on('dragstart', () => alMover.current())

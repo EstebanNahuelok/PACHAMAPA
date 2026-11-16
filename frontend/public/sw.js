@@ -1,7 +1,9 @@
 // Permite abrir Pachamapa sin señal: guarda la aplicacion y las teselas del mapa ya vistas.
 // Los datos (/api) no pasan por aca: la aplicacion guarda la ultima respuesta y estima con el pronostico.
-const APP = 'pachamapa-app-v2';
-const MAPA = 'pachamapa-mapa-v1';
+const APP = 'pachamapa-app-v3';
+// MAPA: teselas vistas al usar la aplicacion (se recortan). RUTA: las de toda la ruta, que guarda la pagina de antemano.
+const MAPA = 'pachamapa-mapa-v2';
+const RUTA = 'pachamapa-ruta-v1';
 const MAXIMO_TESELAS = 400;
 
 // Al instalarse guarda la pagina y sus archivos (JS, CSS, iconos), asi la aplicacion ya abre sin conexion
@@ -22,7 +24,7 @@ self.addEventListener('install', (evento) => {
 self.addEventListener('activate', (evento) => {
   evento.waitUntil(
     caches.keys()
-      .then((nombres) => Promise.all(nombres.filter((n) => n !== APP && n !== MAPA).map((n) => caches.delete(n))))
+      .then((nombres) => Promise.all(nombres.filter((n) => ![APP, MAPA, RUTA].includes(n)).map((n) => caches.delete(n))))
       .then(() => self.clients.claim()),
   );
 });
@@ -48,11 +50,15 @@ async function redPrimero(pedido) {
 
 // Teselas del mapa: primero lo guardado, porque no cambian y asi el mapa aparece sin conexion.
 async function cachePrimero(pedido) {
-  const cache = await caches.open(MAPA);
-  const guardada = await cache.match(pedido);
+  const guardada = (await (await caches.open(RUTA)).match(pedido.url)) ?? (await (await caches.open(MAPA)).match(pedido.url));
   if (guardada) return guardada;
   const respuesta = await fetch(pedido);
-  if (respuesta.ok || respuesta.type === 'opaque') cache.put(pedido, respuesta.clone()).then(() => recortar(cache));
+  // Solo respuestas legibles (con CORS): las opacas ocupan varios megas cada una en la cuota del navegador.
+  // Las que pide la pagina para guardar toda la ruta (no son imagenes del mapa) las guarda ella misma en RUTA.
+  if (respuesta.ok && pedido.destination === 'image') {
+    const cache = await caches.open(MAPA);
+    cache.put(pedido.url, respuesta.clone()).then(() => recortar(cache)).catch(() => {});
+  }
   return respuesta;
 }
 
