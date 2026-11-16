@@ -572,3 +572,12 @@ body { color: var(--pm-texto); background: var(--pm-fondo); }
 
 /* Boton de Pacha sobre el mapa: claro en los dos temas, para que el cardon y su nombre se vean siempre. */
 .pm-boton-pacha { background: #fbf7ec; color: #1c1917; }
+
+/* Navegacion en monitores y televisores: las pantallas completas quedan en una columna centrada
+   y, desde lejos (pantallas muy grandes), todo lo que no es mapa se agranda. */
+@media (min-width: 64rem) {
+  .pm-nav-hoja { padding-inline: max(1rem, calc(50% - 26rem)); }
+}
+@media (min-width: 1800px) and (min-height: 900px) {
+  .pm-nav-ui, .pm-nav-hoja > * { zoom: 1.35; }
+}

@@ -225,7 +225,9 @@ export default function Navegacion({ tramos, sinSenal, prueba, onPrueba, origenI
       <MapaNavegacion recorrido={enRuta} posicion={enRuta ? posicion : null} siguiendo={siguiendo} fluido={conAlertasSimuladas} noche={tramoActual?.clima?.esDia === false} onMover={() => setSiguiendo(false)} />
 
       {/* Tarjeta superior, como la de la proxima maniobra: lo que pasa en el tramo que se esta recorriendo. */}
-      <div className="absolute inset-x-2 top-2 z-[500] space-y-1.5 landscape:right-auto landscape:w-[26rem]">
+      {/* En monitores y televisores las tarjetas, el camino y la llegada van en una columna a la izquierda; en celular este contenedor no ocupa lugar. */}
+      <div className="pm-nav-ui contents lg:absolute lg:bottom-4 lg:left-4 lg:top-4 lg:z-[500] lg:flex lg:w-[27rem] lg:flex-col lg:gap-3">
+      <div className="absolute inset-x-2 top-2 z-[500] space-y-1.5 landscape:right-auto landscape:w-[26rem] lg:!static lg:!w-auto lg:shrink-0">
         {actual && tramoActual ? (
           <>
             <section aria-live="polite" className="rounded-2xl px-4 py-3 shadow-xl" style={{ background: fondo }}>
@@ -285,41 +287,14 @@ export default function Navegacion({ tramos, sinSenal, prueba, onPrueba, origenI
         {sinSenal && <p className="rounded-xl bg-stone-900/95 px-3 py-2 text-sm">Sin datos nuevos: se estima con el último pronóstico recibido.</p>}
       </div>
 
-      {/* Barra de progreso del viaje: de abajo (donde estas) hacia arriba (el destino), con el color de cada tramo. */}
-      {enRuta && enRuta.pasos.length > 1 && (
-        <div aria-hidden="true" className="absolute bottom-32 left-2 top-48 z-[400] flex w-3 flex-col-reverse overflow-hidden rounded-full border-2 border-white bg-white shadow-lg landscape:top-44">
-          {enRuta.pasos.map((p) => (
-            <span key={p.tramo.id} className="min-h-0 flex-1" style={{ background: ESTADOS[p.estado].color }} />
-          ))}
-        </div>
-      )}
-
-      <div className="absolute bottom-28 right-3 z-[500] flex flex-col gap-3">
-        <button type="button" onClick={onEmergencia} aria-label="Emergencia: a quién llamar" className={`${redondo} !bg-red-700 text-sm font-black`}>
-          SOS
-        </button>
-        {!siguiendo && (
-          <button type="button" onClick={() => setSiguiendo(true)} aria-label="Volver a mi posición" className={redondo}>
-            <Trazo nombre="centrar" />
-          </button>
-        )}
-        <button type="button" onClick={alternarVoz} aria-pressed={voz} aria-label={voz ? 'Apagar los avisos por voz' : 'Activar los avisos por voz'} className={`${redondo} ${voz ? '!bg-blue-600' : ''}`}>
-          <Trazo nombre={voz ? 'voz' : 'silencio'} />
-        </button>
-        <button type="button" disabled={!tramoActual || origenId === DEMO || conAlertasSimuladas} onClick={() => posicion && onReportar(posicion.lat, posicion.lon)} aria-label="Reportar algo acá" className={`${redondo} !bg-orange-600`}>
-          <Trazo nombre="mas" tamano={30} />
-        </button>
-      </div>
-
-      {velocidad != null && (
-        <div className="absolute bottom-28 left-8 z-[500] flex h-16 w-16 flex-col items-center justify-center rounded-full bg-stone-900 shadow-lg ring-1 ring-white/20">
-          <span className="text-2xl font-bold leading-none tabular-nums">{velocidad}</span>
-          <span className="text-[10px] text-stone-300">km/h</span>
-        </div>
-      )}
+      {/* Solo en pantallas grandes: el camino por delante siempre a la vista. */}
+      <section className="hidden min-h-0 flex-1 overflow-y-auto rounded-2xl bg-stone-900/95 px-4 py-3 shadow-xl lg:block">
+        <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-400">Camino por delante</h2>
+        {enRuta ? <CaminoPorDelante recorrido={enRuta} /> : <p className="text-base text-stone-300">Elegí desde dónde salís para ver el camino.</p>}
+      </section>
 
       {/* Barra inferior: hora de llegada, tiempo y distancia que faltan, salir y ver el camino. */}
-      <div className="absolute inset-x-0 bottom-0 z-[500] flex items-center gap-3 rounded-t-2xl bg-stone-900 px-3 pb-4 pt-3 shadow-[0_-4px_16px_rgb(0_0_0/0.4)]">
+      <div className="absolute inset-x-0 bottom-0 z-[500] flex items-center gap-3 rounded-t-2xl bg-stone-900 px-3 pb-4 pt-3 shadow-[0_-4px_16px_rgb(0_0_0/0.4)] lg:!static lg:shrink-0 lg:rounded-2xl lg:pb-3">
         <button type="button" onClick={onCerrar} aria-label="Salir de la navegación" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-stone-700">
           <Trazo nombre="cerrar" />
         </button>
@@ -340,9 +315,43 @@ export default function Navegacion({ tramos, sinSenal, prueba, onPrueba, origenI
           Camino
         </button>
       </div>
+      </div>
+
+      {/* Barra de progreso del viaje: de abajo (donde estas) hacia arriba (el destino), con el color de cada tramo. */}
+      {enRuta && enRuta.pasos.length > 1 && (
+        <div aria-hidden="true" className="absolute bottom-32 left-2 top-48 z-[400] flex w-3 flex-col-reverse overflow-hidden rounded-full border-2 border-white bg-white shadow-lg landscape:top-44 lg:hidden">
+          {enRuta.pasos.map((p) => (
+            <span key={p.tramo.id} className="min-h-0 flex-1" style={{ background: ESTADOS[p.estado].color }} />
+          ))}
+        </div>
+      )}
+
+      <div className="pm-nav-ui absolute bottom-28 right-3 z-[500] flex flex-col gap-3 lg:bottom-6 lg:right-6">
+        <button type="button" onClick={onEmergencia} aria-label="Emergencia: a quién llamar" className={`${redondo} !bg-red-700 text-sm font-black`}>
+          SOS
+        </button>
+        {!siguiendo && (
+          <button type="button" onClick={() => setSiguiendo(true)} aria-label="Volver a mi posición" className={redondo}>
+            <Trazo nombre="centrar" />
+          </button>
+        )}
+        <button type="button" onClick={alternarVoz} aria-pressed={voz} aria-label={voz ? 'Apagar los avisos por voz' : 'Activar los avisos por voz'} className={`${redondo} ${voz ? '!bg-blue-600' : ''}`}>
+          <Trazo nombre={voz ? 'voz' : 'silencio'} />
+        </button>
+        <button type="button" disabled={!tramoActual || origenId === DEMO || conAlertasSimuladas} onClick={() => posicion && onReportar(posicion.lat, posicion.lon)} aria-label="Reportar algo acá" className={`${redondo} !bg-orange-600`}>
+          <Trazo nombre="mas" tamano={30} />
+        </button>
+      </div>
+
+      {velocidad != null && (
+        <div className="pm-nav-ui absolute bottom-28 left-8 z-[500] flex h-16 w-16 flex-col items-center justify-center rounded-full bg-stone-900 shadow-lg ring-1 ring-white/20 lg:bottom-6 lg:left-[30rem]">
+          <span className="text-2xl font-bold leading-none tabular-nums">{velocidad}</span>
+          <span className="text-[10px] text-stone-300">km/h</span>
+        </div>
+      )}
 
       {!arranco && (
-        <div className="absolute inset-0 z-[700] flex flex-col bg-stone-900">
+        <div className="pm-nav-hoja absolute inset-0 z-[700] flex flex-col bg-stone-900">
           <header className="shrink-0 border-b border-stone-700 px-4 py-3">
             <h2 className="text-xl font-bold">Antes de salir{enRuta && destino ? ` hacia ${destino.nombre}` : ''}</h2>
             {enRuta && (
@@ -379,7 +388,7 @@ export default function Navegacion({ tramos, sinSenal, prueba, onPrueba, origenI
       )}
 
       {verCamino && (
-        <div className="absolute inset-0 z-[600] flex flex-col bg-stone-900">
+        <div className="pm-nav-hoja absolute inset-0 z-[600] flex flex-col bg-stone-900">
           <header className="flex shrink-0 items-center gap-2 border-b border-stone-700 px-3 py-2">
             <h2 className="text-lg font-bold">Camino por delante</h2>
             <button type="button" onClick={() => setVerCamino(false)} aria-label="Volver al mapa" className="ml-auto flex h-11 w-11 items-center justify-center rounded-full bg-stone-700">
