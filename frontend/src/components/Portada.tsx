@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import type { PointerEvent } from 'react'
 import BotonTema from './BotonTema'
+import Seguridad from './Seguridad'
 import { ESTADOS } from '../lib/formato'
 import type { Tema } from '../lib/tema'
 
@@ -111,13 +112,20 @@ export default function Portada({ tema, onAlternarTema }: Props) {
     }
   }, [])
 
+  // Al llegar desde el mapa con un enlace a una seccion, la portada recien se monta: hay que desplazarse a mano.
+  useEffect(() => {
+    if (location.hash.length > 1 && location.hash !== '#inicio') document.getElementById(location.hash.slice(1))?.scrollIntoView()
+  }, [])
+
   return (
     <div className="min-h-dvh">
       <header ref={escena} className="pm-escena pm-portada-cielo relative overflow-hidden">
         <nav className="relative z-10 mx-auto flex max-w-5xl items-center gap-2 px-4 py-3">
           <img src={tema === 'oscuro' ? '/marca/pachamapa-pin-dark.svg' : '/marca/pachamapa-pin-original.svg'} alt="" className="h-11 w-auto" />
           <span className="pm-marca text-2xl leading-none text-orange-800">Pachamapa</span>
-          <BotonTema tema={tema} onAlternar={onAlternarTema} className="ml-auto bg-white/90 text-stone-700 shadow-sm" />
+          <a href="#seguridad" className="ml-auto hidden rounded-full px-3 py-2 text-sm font-bold text-orange-800 sm:block">Antes de salir</a>
+          <a href="#a-quien-llamar" className="rounded-full px-3 py-2 text-sm font-bold text-orange-800 max-sm:ml-auto">A quién llamar</a>
+          <BotonTema tema={tema} onAlternar={onAlternarTema} className="bg-white/90 text-stone-700 shadow-sm" />
           <a href="#mapa" className="rounded-full bg-orange-700 px-4 py-2 text-sm font-bold text-white">Abrir el mapa</a>
         </nav>
 
@@ -203,6 +211,8 @@ export default function Portada({ tema, onAlternarTema }: Props) {
             ))}
           </ul>
         </section>
+
+        <Seguridad />
 
         <section className="py-6">
           <h2 className="pm-marca text-2xl">Rutas cubiertas</h2>

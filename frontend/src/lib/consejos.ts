@@ -11,7 +11,17 @@ export const ANTES_DE_ARRANCAR = [
   { titulo: 'Combustible, agua y abrigo', texto: 'En la Quebrada y la Puna hay pocas estaciones de servicio y el tiempo cambia rápido.' },
 ]
 
-interface Guia {
+// Lo que se suma en la lista de control de la portada, para repasar con tiempo antes de salir de casa.
+export const ANTES_DE_SALIR = [
+  { titulo: 'Mirá cómo está la ruta', texto: 'Revisá en el mapa los tramos de tu viaje y el pronóstico para la hora en que vas a pasar.' },
+  { titulo: 'Avisá a alguien', texto: 'Contale a dónde vas y a qué hora pensás llegar: en la ruta hay trechos largos sin señal.' },
+  { titulo: 'Descansado y sin alcohol', texto: 'Si estás cansado, no salgas. En viajes largos pará cada dos horas.' },
+  { titulo: 'El vehículo en condiciones', texto: 'Frenos, luces, limpiaparabrisas y presión de las cubiertas, incluida la de auxilio.' },
+  { titulo: 'Elementos de seguridad', texto: 'Balizas, matafuego con carga vigente, crique y llave de ruedas.' },
+  { titulo: 'Papeles a mano', texto: 'Licencia, cédula del vehículo, seguro y revisión técnica al día.' },
+]
+
+export interface Guia {
   titulo: string
   // Version de una linea, para la tarjeta del tramo y los avisos por voz.
   corto: string
@@ -71,6 +81,9 @@ const DESNIVEL_CUESTA_M = 200
 const ALTURA_M = 3000
 
 // Un tramo es de cuesta si entre el y el siguiente (o el anterior) hay un desnivel fuerte.
+// Todas las guias, para mostrarlas juntas en la portada.
+export const GUIAS: Guia[] = [NIEBLA, LLUVIA, HIELO, VIENTO, OBSTACULO, CUESTA, ALTURA]
+
 export function esCuesta(pasos: Paso[], i: number) {
   const desnivel = (a?: Paso, b?: Paso) => (a && b && a.tramo.rutaId === b.tramo.rutaId ? Math.abs(a.tramo.altitud - b.tramo.altitud) : 0)
   return Math.max(desnivel(pasos[i - 1], pasos[i]), desnivel(pasos[i], pasos[i + 1])) >= DESNIVEL_CUESTA_M

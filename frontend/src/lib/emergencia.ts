@@ -15,6 +15,16 @@ export const NUMEROS_OFICIALES = [
   { numero: '0800-222-6272', nombre: 'Vialidad Nacional', detalle: 'Estado de las rutas nacionales y auxilio en ruta.', fuente: 'https://www.argentina.gob.ar/transporte/vialidad-nacional/estado-de-rutas' },
 ]
 
+// A quien llamar segun lo que pasa. Solo usa los numeros de NUMEROS_OFICIALES; el primero es al que hay que llamar antes.
+export const SEGUN_LO_QUE_PASA = [
+  { titulo: 'Choque o vuelco', texto: 'Si hay heridos, pedí una ambulancia y no los muevas salvo que haya peligro. Poné las balizas y esperá fuera de la calzada.', numeros: ['107', '911'] },
+  { titulo: 'Alguien descompuesto', texto: 'Desmayo, dolor de pecho, mal de altura fuerte o cualquier urgencia médica.', numeros: ['107', '911'] },
+  { titulo: 'Incendio', texto: 'Del vehículo o de pastizales al costado de la ruta. Alejate, y no cruces una zona con humo que no deja ver.', numeros: ['100', '911'] },
+  { titulo: 'Derrumbe, alud o crecida', texto: 'No intentes pasar ni te quedes debajo del cerro o cerca del cauce: retrocedé a un lugar alto y seguro.', numeros: ['103', '911'] },
+  { titulo: 'Robo o una persona en peligro', texto: 'Delitos, violencia o alguien perdido en la zona.', numeros: ['911'] },
+  { titulo: 'Ruta cortada o problema en la calzada', texto: 'Para consultar el estado de una ruta nacional o avisar de un problema en ella. Si hay personas en riesgo, llamá al 911.', numeros: ['0800-222-6272', '911'] },
+]
+
 const CLAVE = 'pm-contacto-emergencia'
 
 export function leerContacto(): Contacto | null {

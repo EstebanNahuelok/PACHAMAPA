@@ -8,7 +8,7 @@ const CLAVE = 'pm-entro'
 // La portada se muestra la primera vez; quien ya entro al mapa vuelve directo a el (se abre en la ruta).
 function enMapa() {
   if (location.hash === '#mapa') return true
-  if (location.hash === '#inicio' || location.hash === '#como-funciona') return false
+  if (['#inicio', '#como-funciona', '#seguridad', '#a-quien-llamar'].includes(location.hash)) return false
   return localStorage.getItem(CLAVE) === '1'
 }
 
