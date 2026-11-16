@@ -13,7 +13,7 @@ export const MAXIMO_LARGO = 500;
 const ETIQUETAS = { bien: 'bien', atencion: 'atención', problemas: 'problemas' };
 const hora = (iso) => new Date(iso).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'America/Argentina/Jujuy' });
 
-const INSTRUCCIONES = `Sos el asistente de Pachamapa, una aplicación que muestra el clima y el estado de la ruta, tramo por tramo, en la RN 9 y la RN 52 de Jujuy (Quebrada de Humahuaca y Puna).
+const INSTRUCCIONES = `Sos Pacha, el asistente de Pachamapa: un cardón (cactus) de la Quebrada, amable y tranquilo. Pachamapa es una aplicación que muestra el clima y el estado de la ruta, tramo por tramo, en la RN 9 y la RN 52 de Jujuy (Quebrada de Humahuaca y Puna).
 Respondé en español rioplatense, claro y breve: como mucho cuatro oraciones o una lista corta. Sin Markdown.
 
 Reglas:

@@ -17,9 +17,9 @@ function leerMarcados(): string[] {
 
 const numero = (n: string) => NUMEROS_OFICIALES.find((o) => o.numero === n)!
 
-// Seccion de la portada: lista de control antes de salir, consejos segun el camino y a quien llamar.
+// Paginas de la portada: lista de control antes de salir y consejos segun el camino, y a quien llamar.
 // Es todo contenido fijo, asi que se ve y se puede llamar aunque no haya datos.
-export default function Seguridad() {
+export function AntesDeSalir() {
   const [marcados, setMarcados] = useState(leerMarcados)
 
   function guardar(lista: string[]) {
@@ -30,11 +30,8 @@ export default function Seguridad() {
   const hechos = LISTA.filter((c) => marcados.includes(c.titulo)).length
 
   return (
-    <section id="seguridad" className="scroll-mt-4 py-6">
-      <h2 className="pm-marca text-2xl">Antes de salir</h2>
-      <p className="mt-1 text-stone-600">Repasá la lista antes de arrancar. Lo que marcás queda guardado en este teléfono.</p>
-
-      <div className="mt-5 grid gap-3 lg:grid-cols-2">
+    <section className="py-8">
+      <div className="grid gap-3 lg:grid-cols-2">
         <div className={`${tarjeta} p-5`}>
           <div className="flex items-center gap-2">
             <h3 className="whitespace-nowrap text-lg font-bold">Lista de control</h3>
@@ -82,10 +79,15 @@ export default function Seguridad() {
           </div>
         </div>
       </div>
+      <p className="mt-4 text-xs text-stone-500">Los consejos son recomendaciones generales de seguridad vial: respetá siempre la señalización y a las autoridades.</p>
+    </section>
+  )
+}
 
-      <h2 id="a-quien-llamar" className="pm-marca mt-10 scroll-mt-4 text-2xl">A quién llamar</h2>
-      <p className="mt-1 text-stone-600">Según lo que pase. Las llamadas a estos números funcionan aunque no tengas datos; desde un celular, tocá el número para llamar.</p>
-      <ul className="mt-5 grid gap-3 sm:grid-cols-2">
+export function AQuienLlamar() {
+  return (
+    <section className="py-8">
+      <ul className="grid gap-3 sm:grid-cols-2">
         {SEGUN_LO_QUE_PASA.map((s) => (
           <li key={s.titulo} className={`${tarjeta} flex flex-col p-5`}>
             <h3 className="text-lg font-bold">{s.titulo}</h3>
@@ -114,7 +116,7 @@ export default function Seguridad() {
             </a>
           </span>
         ))}
-        . Los consejos son recomendaciones generales de seguridad vial: respetá siempre la señalización y a las autoridades.
+        .
       </p>
     </section>
   )

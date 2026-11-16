@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import Modal from './Modal'
+import Pacha from './Pacha'
 import { asistenteDisponible, preguntarAsistente, type MensajeAsistente } from '../lib/api'
 
 interface Props {
@@ -53,15 +54,18 @@ export default function Asistente({ sinSenal, onCerrar }: Props) {
     setMensajes((actuales) => [...actuales, { rol: 'user', texto: f.pregunta }, { rol: 'assistant', texto: f.respuesta }])
 
   return (
-    <Modal titulo="Ayuda" onCerrar={onCerrar}>
+    <Modal titulo="Pacha" onCerrar={onCerrar}>
       <div className="space-y-3">
-        <p className="text-sm text-stone-600">
-          {libre
-            ? 'Preguntame por el estado de la ruta o cómo usar la aplicación. Es una ayuda con inteligencia artificial, no una fuente oficial: puede equivocarse.'
-            : sinSenal
-              ? 'Sin conexión solo puedo mostrarte estas respuestas guardadas.'
-              : 'Preguntas frecuentes sobre la aplicación.'}
-        </p>
+        <div className="flex items-center gap-3">
+          <Pacha className="h-20 w-auto shrink-0" />
+          <p className="rounded-2xl bg-stone-100 px-3.5 py-2 text-sm text-stone-800">
+            {libre
+              ? '¡Hola! Soy Pacha. Preguntame por el estado de la ruta o cómo usar la aplicación. Uso inteligencia artificial y no soy una fuente oficial: puedo equivocarme.'
+              : sinSenal
+                ? '¡Hola! Soy Pacha. Sin conexión solo puedo mostrarte estas respuestas guardadas.'
+                : '¡Hola! Soy Pacha. Estas son las preguntas más frecuentes sobre la aplicación.'}
+          </p>
+        </div>
 
         {mensajes.length > 0 && (
           <div className="max-h-[45dvh] space-y-2 overflow-y-auto" aria-live="polite">

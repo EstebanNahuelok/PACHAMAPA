@@ -63,7 +63,7 @@ Lo que **no** está y se puede sumar si se quiere: recomendaciones calculadas co
 
 ## 4. A sumar: asistente con IA
 
-> **Estado**: primera versión hecha. Backend en `backend/src/services/asistente.js` y `backend/src/routes/asistente.js` (`GET /api/asistente` informa si está disponible; `POST` responde, 503 sin `GROQ_API_KEY`, límite de 20 preguntas cada 10 minutos por IP). Frontend en `frontend/src/components/Asistente.tsx`, botón "Ayuda" sobre el mapa, con cinco preguntas frecuentes fijas que funcionan sin conexión y sin clave. Falta: probarlo con una clave real de Groq (preguntas fuera de tema, emergencias, intentos de saltear las reglas) y las acciones dentro de la aplicación. Lo que sigue es el diseño original.
+> **Estado**: primera versión hecha. Backend en `backend/src/services/asistente.js` y `backend/src/routes/asistente.js` (`GET /api/asistente` informa si está disponible; `POST` responde, 503 sin `GROQ_API_KEY`, límite de 20 preguntas cada 10 minutos por IP). Frontend en `frontend/src/components/Asistente.tsx`, botón "Pacha" sobre el mapa (el asistente se llama Pacha y es un cardón, dibujado en `frontend/src/components/Pacha.tsx`), con cinco preguntas frecuentes fijas que funcionan sin conexión y sin clave. Falta: probarlo con una clave real de Groq (preguntas fuera de tema, emergencias, intentos de saltear las reglas) y las acciones dentro de la aplicación. Lo que sigue es el diseño original.
 
 Es lo único que falta de la lista original.
 
