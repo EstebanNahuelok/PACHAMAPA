@@ -306,7 +306,7 @@ export default function Navegacion({ tramos, sinSenal, prueba, onPrueba, origenI
         <button type="button" onClick={alternarVoz} aria-pressed={voz} aria-label={voz ? 'Apagar los avisos por voz' : 'Activar los avisos por voz'} className={`${redondo} ${voz ? '!bg-blue-600' : ''}`}>
           <Trazo nombre={voz ? 'voz' : 'silencio'} />
         </button>
-        <button type="button" disabled={sinSenal || !tramoActual || origenId === DEMO || conAlertasSimuladas} onClick={() => posicion && onReportar(posicion.lat, posicion.lon)} aria-label="Reportar algo acá" className={`${redondo} !bg-orange-600`}>
+        <button type="button" disabled={!tramoActual || origenId === DEMO || conAlertasSimuladas} onClick={() => posicion && onReportar(posicion.lat, posicion.lon)} aria-label="Reportar algo acá" className={`${redondo} !bg-orange-600`}>
           <Trazo nombre="mas" tamano={30} />
         </button>
       </div>

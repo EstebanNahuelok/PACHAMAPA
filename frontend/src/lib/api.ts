@@ -52,7 +52,7 @@ export interface Interesado {
 
 const enviar = <T>(ruta: string, cuerpo: unknown) => pedir<T>(ruta, { method: 'POST', body: JSON.stringify(cuerpo) })
 
-export const enviarReporte = (reporte: NuevoReporte) => enviar<ReporteCreado>('/api/reportes', reporte)
+export const enviarReporte = (reporte: NuevoReporte) => pedir<ReporteCreado>('/api/reportes', { method: 'POST', body: JSON.stringify(reporte), signal: AbortSignal.timeout(15000) })
 export const obtenerMetricas = () => pedir<Metricas>('/api/metricas')
 export const sumarListaEspera = (interesado: Interesado) => enviar<{ ok: true }>('/api/lista-espera', interesado)
 

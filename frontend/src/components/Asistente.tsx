@@ -14,7 +14,7 @@ const FRECUENTES = [
   { pregunta: '¿Cómo reporto un problema?', respuesta: 'Tocá "Reportar", elegí el punto de la ruta y qué pasa (corte, derrumbe, neblina, hielo…). Cuando otro conductor reporta lo mismo, queda confirmado. Necesita conexión.' },
   { pregunta: '¿A quién llamo en una emergencia?', respuesta: '911 emergencias y policía · 107 SAME (ambulancia) · 100 bomberos · 103 Defensa Civil · 0800-222-6272 Vialidad Nacional. El botón SOS muestra tu ubicación y arma un mensaje de ayuda; funciona sin datos.' },
   { pregunta: '¿Cómo recibo alertas por WhatsApp?', respuesta: 'Tocá "Recibir alertas por WhatsApp", poné tu número y elegí las localidades, el horario y el nivel. Cada mensaje trae un enlace para darte de baja.' },
-  { pregunta: '¿Funciona sin señal?', respuesta: 'Sí: si la abriste antes con conexión, la aplicación muestra el mapa de la ruta y los últimos datos recibidos, con la hora a la que corresponden. No se puede reportar hasta que vuelva la señal.' },
+  { pregunta: '¿Funciona sin señal?', respuesta: 'Sí: si la abriste antes con conexión, la aplicación muestra el mapa de la ruta y los últimos datos recibidos, con la hora a la que corresponden. Si reportás algo sin señal, queda guardado y se envía solo cuando vuelve la conexión.' },
 ]
 
 export default function Asistente({ sinSenal, onCerrar }: Props) {

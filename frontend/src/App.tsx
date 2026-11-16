@@ -3,6 +3,7 @@ import Mapa from './components/Mapa'
 import ListaTramos from './components/ListaTramos'
 import DetalleTramo from './components/DetalleTramo'
 import FormularioReporte from './components/FormularioReporte'
+import { cantidadPendientes, enviarPendientes } from './lib/reportesPendientes'
 import ListaEspera from './components/ListaEspera'
 import Alertas from './components/Alertas'
 import Noticias from './components/Noticias'
@@ -48,6 +49,7 @@ export default function App({ tema, onAlternarTema }: { tema: Tema; onAlternarTe
   const [suscribiendo, setSuscribiendo] = useState(false)
   const [enAyuda, setEnAyuda] = useState(() => location.hash === '#mapa-pacha')
   const [aviso, setAviso] = useState<string | null>(null)
+  const [pendientes, setPendientes] = useState(cantidadPendientes)
   const [metricas, setMetricas] = useState<Metricas | null>(null)
   const panel = useRef<HTMLElement>(null)
   const alertasVistas = useRef<Set<string> | null>(null)
@@ -74,6 +76,16 @@ export default function App({ tema, onAlternarTema }: { tema: Tema; onAlternarTe
       setSinSenal(false)
       setError(null)
       obtenerMetricas().then(setMetricas, () => {})
+      // Volvio la conexion: salen los reportes que quedaron guardados sin señal.
+      if (cantidadPendientes() > 0) {
+        enviarPendientes().then((enviados) => {
+          setPendientes(cantidadPendientes())
+          if (enviados > 0) {
+            setAviso(enviados === 1 ? 'Se envió el reporte que habías guardado sin señal.' : `Se enviaron los ${enviados} reportes que habías guardado sin señal.`)
+            cargar()
+          }
+        })
+      }
     } catch {
       // Sin conexion: se sigue con los ultimos datos recibidos, llevados a esta hora con su pronostico.
       const guardados = leerDatos()
@@ -235,7 +247,7 @@ export default function App({ tema, onAlternarTema }: { tema: Tema; onAlternarTe
           <button
             type="button"
             onClick={empezarReporte}
-            disabled={!datos || sinSenal}
+            disabled={!datos}
             className="absolute bottom-7 right-3 z-[500] flex items-center gap-1.5 rounded-full bg-orange-700 py-3 pl-4 pr-5 text-base font-bold text-white shadow-lg ring-2 ring-white active:bg-orange-800 disabled:opacity-60"
           >
             <span className="text-xl leading-none">+</span> Reportar
@@ -246,6 +258,7 @@ export default function App({ tema, onAlternarTema }: { tema: Tema; onAlternarTe
           {sinSenal && datos?.actualizado && (
             <p role="status" className="bg-stone-800 px-4 py-2 text-sm text-white">
               <span className="font-bold">Sin datos nuevos.</span> Lo que ves es una estimación con el pronóstico recibido {haceCuanto(datos.actualizado)}; los reportes pueden estar desactualizados.
+              {pendientes > 0 && <> {pendientes === 1 ? 'Tenés 1 reporte guardado' : `Tenés ${pendientes} reportes guardados`}: se envía solo cuando vuelva la señal.</>}
             </p>
           )}
           {!sinSenal && (error || datos?.error) && (
@@ -327,6 +340,12 @@ export default function App({ tema, onAlternarTema }: { tema: Tema; onAlternarTe
           onQuitarFinal={() => setPunto({ ...punto, fin: undefined })}
           onCerrar={() => setPunto(null)}
           onEnviado={alEnviarReporte}
+          onGuardado={() => {
+            setPunto(null)
+            setEligiendo(null)
+            setPendientes(cantidadPendientes())
+            setAviso('Sin señal: el reporte quedó guardado y se envía solo cuando vuelva la conexión (hasta 2 horas).')
+          }}
         />
       )}
       {enAyuda && <Asistente sinSenal={sinSenal} onCerrar={() => setEnAyuda(false)} />}

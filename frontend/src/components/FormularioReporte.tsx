@@ -4,6 +4,7 @@ import Modal from './Modal'
 import { enviarReporte } from '../lib/api'
 import type { ReporteCreado } from '../lib/api'
 import { CON_LARGO, TIPOS_REPORTE } from '../lib/reportes'
+import { esFalloDeRed, guardarPendiente } from '../lib/reportesPendientes'
 import type { TipoReporte } from '../lib/tipos'
 import type { PuntoElegido } from '../lib/ruta'
 
@@ -17,11 +18,13 @@ interface Props {
   onQuitarFinal: () => void
   onCerrar: () => void
   onEnviado: (reporte: ReporteCreado) => void
+  // Sin señal el reporte queda guardado en el telefono para enviarse despues.
+  onGuardado: () => void
 }
 
 const OTRO = 'otro'
 
-export default function FormularioReporte({ punto, oculto, onCambiarPunto, onMarcarFinal, onQuitarFinal, onCerrar, onEnviado }: Props) {
+export default function FormularioReporte({ punto, oculto, onCambiarPunto, onMarcarFinal, onQuitarFinal, onCerrar, onEnviado, onGuardado }: Props) {
   const [tipo, setTipo] = useState<string | null>(null)
   const [comentario, setComentario] = useState('')
   const [enviando, setEnviando] = useState(false)
@@ -35,10 +38,16 @@ export default function FormularioReporte({ punto, oculto, onCambiarPunto, onMar
     if (tipo === OTRO && !comentario.trim()) return setError('Contanos qué está pasando.')
     setEnviando(true)
     setError(null)
+    const final = conLargo && punto.fin ? { latFin: punto.fin.lat, lonFin: punto.fin.lon } : {}
+    const reporte = { tipo: tipo === OTRO ? undefined : tipo, tramoId: punto.tramoId, lat: punto.lat, lon: punto.lon, ...final, comentario: comentario.trim() || undefined }
     try {
-      const final = conLargo && punto.fin ? { latFin: punto.fin.lat, lonFin: punto.fin.lon } : {}
-      onEnviado(await enviarReporte({ tipo: tipo === OTRO ? undefined : tipo, tramoId: punto.tramoId, lat: punto.lat, lon: punto.lon, ...final, comentario: comentario.trim() || undefined }))
+      if (!navigator.onLine) throw new TypeError('sin conexion')
+      onEnviado(await enviarReporte(reporte))
     } catch (err) {
+      if (esFalloDeRed(err)) {
+        guardarPendiente(reporte)
+        return onGuardado()
+      }
       setError(err instanceof Error ? err.message : 'No se pudo enviar el reporte.')
       setEnviando(false)
     }
