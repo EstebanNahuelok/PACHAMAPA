@@ -22,11 +22,16 @@ export function enHorario({ desdeHora, hastaHora }, hora = horaJujuy()) {
   return desdeHora < hastaHora ? hora >= desdeHora && hora < hastaHora : hora >= desdeHora || hora < hastaHora;
 }
 
-// El suscriptor elige localidades; un tramo suyo sin localidad vecina también cubre los de arriba/abajo.
-const cubiertoPor = (localidades) => {
+// Hora de Jujuy ("08:00") de un instante en ISO, como la muestra la aplicacion.
+const hora = (iso) => new Date(iso).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'America/Argentina/Jujuy' });
+// "hasta" es el comienzo de la ultima hora prevista: el rango termina una hora despues.
+const rangoHoras = (desde, hasta) => `de ${hora(desde)} a ${hora(new Date(hasta).getTime() + 60 * 60 * 1000)}`;
+
+// El suscriptor elige localidades (o tramos sueltos, por su id); cada tramo elegido cubre tambien al de arriba y al de abajo.
+export const cubiertoPor = (localidades) => {
   const indices = new Set();
   TRAMOS.forEach((t, i) => {
-    if (localidades.has(t.localidad)) {
+    if (localidades.has(t.localidad) || localidades.has(t.id)) {
       indices.add(i);
       if (TRAMOS[i - 1]?.rutaId === t.rutaId) indices.add(i - 1);
       if (TRAMOS[i + 1]?.rutaId === t.rutaId) indices.add(i + 1);
@@ -35,10 +40,10 @@ const cubiertoPor = (localidades) => {
   return new Set([...indices].map((i) => TRAMOS[i].id));
 };
 
-function textoAlerta(suscripcion, alertas) {
+export function textoAlerta(suscripcion, alertas) {
   const bloques = alertas.map((a) => {
     const referencia = a.referencia ? ` (${a.referencia})` : '';
-    const previsto = a.desde ? `\nPrevisto: de ${a.desde} a ${a.hasta}` : '';
+    const previsto = a.desde ? `\nPrevisto: ${rangoHoras(a.desde, a.hasta)}` : '';
     return `*${ETIQUETAS[a.nivel]}* en ${a.tramo}${referencia}\n- ${a.mensaje}${previsto}`;
   });
   const mapa = URL_MAPA ? `\n\nMapa: ${URL_MAPA}` : '';
