@@ -80,3 +80,12 @@ export function registrarVisita() {
   }
   return enviar<null>('/api/visitas', { visitante })
 }
+
+export interface MensajeAsistente {
+  rol: 'user' | 'assistant'
+  texto: string
+}
+
+export const asistenteDisponible = () => pedir<{ disponible: boolean }>('/api/asistente', { signal: AbortSignal.timeout(8000) }).then((r) => r.disponible, () => false)
+export const preguntarAsistente = (mensajes: MensajeAsistente[]) =>
+  pedir<{ respuesta: string }>('/api/asistente', { method: 'POST', body: JSON.stringify({ mensajes }), signal: AbortSignal.timeout(25000) })

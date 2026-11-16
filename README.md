@@ -118,6 +118,7 @@ En desarrollo el frontend redirige `/api` al backend local, así que no hace fal
 | backend | `DATABASE_URL` | Connection string de Postgres. Sin base, el mapa y el clima funcionan igual; solo se desactivan los reportes. |
 | backend | `GROQ_API_KEY` | Opcional. Clasifica el texto libre de los reportes. |
 | backend | `GROQ_MODEL` | Opcional. Modelo de Groq (por defecto `llama-3.1-8b-instant`). |
+| backend | `GROQ_MODEL_ASISTENTE` | Opcional. Modelo del asistente de ayuda (por defecto `llama-3.3-70b-versatile`). Sin `GROQ_API_KEY` el asistente solo muestra preguntas frecuentes. |
 | backend | `CORS_ORIGIN` | Opcional. Orígenes permitidos separados por coma (vacío = todos). |
 | backend | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_WHATSAPP_FROM` | Opcional. Credenciales y número de WhatsApp de Twilio. Sin las tres, las alertas no se envían: solo se escriben en el log. |
 | backend | `PUBLIC_URL` | Opcional. URL pública del backend, para el enlace de baja (en Render se detecta sola). |

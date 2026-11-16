@@ -7,6 +7,7 @@ import ListaEspera from './components/ListaEspera'
 import Alertas from './components/Alertas'
 import Noticias from './components/Noticias'
 import AlertasWhatsApp from './components/AlertasWhatsApp'
+import Asistente from './components/Asistente'
 import BotonTema from './components/BotonTema'
 import Navegacion from './components/Navegacion'
 import Emergencia from './components/Emergencia'
@@ -44,6 +45,7 @@ export default function App({ tema, onAlternarTema }: { tema: Tema; onAlternarTe
   const [desdeVista, setDesdeVista] = useState(0)
   const [enListaEspera, setEnListaEspera] = useState(false)
   const [suscribiendo, setSuscribiendo] = useState(false)
+  const [enAyuda, setEnAyuda] = useState(false)
   const [aviso, setAviso] = useState<string | null>(null)
   const [metricas, setMetricas] = useState<Metricas | null>(null)
   const panel = useRef<HTMLElement>(null)
@@ -222,6 +224,9 @@ export default function App({ tema, onAlternarTema }: { tema: Tema; onAlternarTe
           <button type="button" onClick={() => setEnEmergencia(true)} aria-label="Emergencia: a quién llamar" className="absolute bottom-[5.25rem] left-3 z-[500] rounded-full bg-red-700 px-5 py-3 text-base font-black text-white shadow-lg ring-2 ring-white">
             SOS
           </button>
+          <button type="button" onClick={() => setEnAyuda(true)} aria-label="Ayuda: preguntas sobre la ruta y la aplicación" className="absolute bottom-[5.25rem] right-3 z-[500] rounded-full bg-white px-5 py-3 text-base font-bold text-stone-900 shadow-lg ring-2 ring-stone-300">
+            Ayuda
+          </button>
           <button type="button" onClick={() => setNavegando(true)} disabled={!datos} className="absolute bottom-7 left-3 z-[500] rounded-full bg-stone-900 px-5 py-3 text-base font-bold text-white shadow-lg ring-2 ring-white disabled:opacity-60">
             Navegar
           </button>
@@ -322,6 +327,7 @@ export default function App({ tema, onAlternarTema }: { tema: Tema; onAlternarTe
           onEnviado={alEnviarReporte}
         />
       )}
+      {enAyuda && <Asistente sinSenal={sinSenal} onCerrar={() => setEnAyuda(false)} />}
       {suscribiendo && <AlertasWhatsApp tramos={datos?.tramos ?? []} tramoInicial={seleccionado} onCerrar={() => { setSuscribiendo(false); obtenerMetricas().then(setMetricas, () => {}) }} />}
       {enListaEspera && <ListaEspera onCerrar={() => { setEnListaEspera(false); obtenerMetricas().then(setMetricas, () => {}) }} />}
     </div>

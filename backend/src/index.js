@@ -6,6 +6,7 @@ import tramosRouter from './routes/tramos.js';
 import reportesRouter from './routes/reportes.js';
 import traccionRouter from './routes/traccion.js';
 import alertasRouter from './routes/alertas.js';
+import asistenteRouter from './routes/asistente.js';
 import { revisarAlertas } from './services/whatsappAlertas.js';
 import { iniciarActualizacionAutomatica } from './services/openMeteo.js';
 import { iniciarNoticias } from './services/noticias.js';
@@ -23,6 +24,7 @@ app.get('/api/health', (_req, res) => res.json({ ok: true, servicio: 'pachamapa'
 app.use('/api/tramos', tramosRouter);
 app.use('/api/reportes', reportesRouter);
 app.use('/api/alertas', alertasRouter);
+app.use('/api/asistente', asistenteRouter);
 app.use('/api', traccionRouter);
 
 app.use((_req, res) => res.status(404).json({ error: 'No encontrado' }));
