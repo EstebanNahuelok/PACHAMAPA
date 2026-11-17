@@ -45,6 +45,8 @@ Además de las variables:
 
 ### 3. Probar en el mundo real
 
+- **Viajes por la Argentina con GPS real**: indicaciones por voz, recálculo al salirse del camino y llegada. Se probaron solo con la simulación.
+
 - **Teléfono en la ruta**: GPS, navegación, avisos por voz, pantalla siempre encendida, llamadas del SOS, envío por WhatsApp del contacto, elegir el punto del reporte tocando el mapa y marcar el final con un segundo toque.
 - **Pacha con una clave real**: preguntas fuera de tema, pedidos de números de emergencia e intentos de cambiarle las instrucciones.
 - **WhatsApp real** con Twilio: alta, alerta, que no se repita y baja.
@@ -69,6 +71,9 @@ En orden sugerido:
 
 ### 5. Mantenimiento
 
+- **Servidor de rutas propio**: los viajes usan el servidor público de demostración de OSRM (`router.project-osrm.org`), que no garantiza disponibilidad ni admite mucho tráfico. Para publicar en serio hay que montar OSRM o Valhalla propio con el mapa de Argentina, o usar un servicio pago, y apuntar `OSRM_URL` ahí.
+- **Viajes fuera de Jujuy, a medias**: no tienen reportes de la gente, alertas por WhatsApp, zonas críticas ni mapa sin conexión; solo el clima previsto. El mapa principal sigue mostrando solo Jujuy.
+
 - **Tests del frontend e integración continua**: hoy solo el backend tiene tests (22) y nada los corre en cada cambio.
 - **Una sola lógica de alertas**: el armado está escrito dos veces (servidor y modo sin señal) y los textos de los motivos del clima se usan como clave en el frontend.
 - **Proteger las métricas** y el contador de visitas, que son públicos y se pueden inflar.
@@ -92,7 +97,8 @@ En orden sugerido:
 - **Cortes y alternativas**: restricción, desvío (solo con antecedente oficial) y enlace al parte de Vialidad Nacional.
 - **Alertas por WhatsApp**: cada persona elige localidades o tramos, horario y nivel (solo problemas, o también atención). Elegir un tramo cubre también sus dos vecinos. La misma alerta no se repite durante 6 horas salvo que cambie o empeore; las horas van en hora de Jujuy; cada mensaje trae un enlace de baja.
 - **Noticias de los diarios**: cada 5 minutos se buscan en Google Noticias las notas de las últimas 48 horas sobre incidentes en estas rutas, con el nombre del medio y el enlace directo. Son informativas: no cambian el estado ni disparan alertas.
-- **Modo navegación** al estilo Android Auto: sigue la posición, muestra arriba la alerta del tramo actual y la próxima dificultad, al costado el estado de todo el viaje y abajo la hora de llegada. Lo que muestra es lo previsto para la hora en que vas a pasar. Avisos por voz, reporte en el tramo actual, mapa oscuro de noche y dos simulaciones (con datos reales, y una demo de Maimará a Huacalera con alertas simuladas). **En monitores y smart TV** (desde 1024 px) las tarjetas y el "Camino por delante" quedan en una columna a la izquierda, siempre a la vista; desde 1800 px se agranda todo para leerse de lejos.
+- **Viajes a toda la Argentina**: el botón "Navegar" abre "Planear un viaje". Se busca el destino (y, si se quiere, el origen) por nombre de ciudad, pueblo o municipio, filtrando por provincia, o se elige una provincia y se ve la lista de sus municipios. Quedan guardados los destinos recientes. El camino se calcula con OSRM sobre OpenStreetMap y se muestra entero en el mapa, pintado con el clima previsto a la hora en que se pasa por cada tramo de unos 10 km (Open-Meteo), con la duración, los kilómetros, la hora de llegada y la lista de indicaciones. Al tocar "Iniciar" se navega como en Google Maps: la próxima maniobra con su flecha y distancia ("1,2 km · Doblá a la derecha por RN 34"), la siguiente, el clima complicado que viene, indicaciones por voz, recálculo si te salís del camino y llegada estimada. "Simular" recorre el camino sin moverse. La navegación por tramos de 5 km de la Quebrada sigue disponible desde esa pantalla.
+- **Modo navegación** de la Quebrada al estilo Android Auto: sigue la posición, muestra arriba la alerta del tramo actual y la próxima dificultad, al costado el estado de todo el viaje y abajo la hora de llegada. Lo que muestra es lo previsto para la hora en que vas a pasar. Avisos por voz, reporte en el tramo actual, mapa oscuro de noche y dos simulaciones (con datos reales, y una demo de Maimará a Huacalera con alertas simuladas). **En monitores y smart TV** (desde 1024 px) las tarjetas y el "Camino por delante" quedan en una columna a la izquierda, siempre a la vista; desde 1800 px se agranda todo para leerse de lejos.
 - **Antes de salir**: lista de control de 10 puntos (cinturón, luces, teléfono en el soporte, combustible, avisar a alguien…) que queda guardada en el teléfono, y consejos según el camino (niebla, lluvia, hielo, viento, derrumbes, cuesta, altura), también por voz durante el viaje. Con un contacto cargado, ofrece avisarle que salís.
 - **A quién llamar**: seis situaciones (choque, alguien descompuesto, incendio, derrumbe o crecida, robo, ruta cortada) con el número a llamar primero y el 911 de respaldo.
 - **Emergencia (SOS)**: contacto propio guardado en el teléfono, números oficiales con su fuente (911, 107 SAME, 100 Bomberos, 103 Defensa Civil, 0800-222-6272 Vialidad Nacional) y la ubicación lista para decir por teléfono. Funciona sin datos.
@@ -185,6 +191,7 @@ Plantillas en `backend/.env.example` y `frontend/.env.example`.
 | backend | `FRONTEND_URL` | Opcional. URL del mapa, que va en cada alerta. |
 | backend | `ALERTAS_REPETIR_HORAS` | Opcional. Horas antes de repetir un aviso que sigue igual (por defecto 6). |
 | backend | `NOTICIAS`, `NOTICIAS_MINUTOS`, `NOTICIAS_HORAS` | Opcional. `NOTICIAS=no` desactiva las noticias; las otras cambian cada cuántos minutos se consultan (5) y de cuántas horas para atrás (48). |
+| backend | `OSRM_URL` | Opcional. Servidor de rutas OSRM (por defecto el público de demostración, `https://router.project-osrm.org`). |
 | backend | `PORT` | Puerto (por defecto 3001). |
 | frontend | `VITE_API_URL` | URL pública del backend. Se lee **al hacer el build**; en desarrollo se deja vacía. |
 
@@ -209,6 +216,9 @@ Después de cambiar `backend/.env` hay que reiniciar el backend.
 | `GET /api/alertas/baja/:token` | Da de baja una suscripción (el enlace de cada mensaje). |
 | `GET /api/asistente` | Si Pacha puede responder con IA (`disponible`). |
 | `POST /api/asistente` | Pregunta a Pacha: `{ mensajes: [{ rol, texto }] }`. 503 sin `GROQ_API_KEY`. Límite: 20 preguntas cada 10 minutos por IP y 500 caracteres por mensaje. |
+| `GET /api/provincias` | Las 24 provincias con su centro (Georef). |
+| `GET /api/lugares?q=&provincia=` | Ciudades, pueblos y municipios que coinciden con `q`, opcionalmente de una provincia; sin `q`, los municipios de la provincia. |
+| `GET /api/viaje?desde=lat,lon&hasta=lat,lon` | Camino (`linea`), `indicaciones` en castellano con su kilómetro, `total` en km, `duracion` en segundos y `tramos` de ~10 km con el clima y el estado previstos a la hora de paso. Límite: 40 cada 10 minutos por IP. |
 | `POST /api/visitas` | Registra una visita. |
 | `GET /api/metricas` | Visitas, visitantes únicos, reportes, suscriptores y anotados en la lista de espera. |
 | `POST /api/lista-espera` | Suma un interesado: `{ nombre, contacto, rubro, mensaje? }`. |

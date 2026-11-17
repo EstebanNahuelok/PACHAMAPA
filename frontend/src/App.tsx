@@ -12,6 +12,7 @@ import Asistente from './components/Asistente'
 import Pacha from './components/Pacha'
 import BotonTema from './components/BotonTema'
 import Navegacion from './components/Navegacion'
+import Viaje from './components/Viaje'
 import Emergencia from './components/Emergencia'
 import { obtenerMetricas, obtenerTramos, registrarVisita } from './lib/api'
 import type { Metricas, ReporteCreado } from './lib/api'
@@ -41,6 +42,7 @@ export default function App({ tema, onAlternarTema }: { tema: Tema; onAlternarTe
   const [eligiendo, setEligiendo] = useState<'inicio' | 'fin' | null>(null)
   const [punto, setPunto] = useState<PuntoElegido | null>(null)
   const [navegando, setNavegando] = useState(false)
+  const [viajando, setViajando] = useState(false)
   const [enEmergencia, setEnEmergencia] = useState(false)
   const [verTodos, setVerTodos] = useState(false)
   const [adelanto, setAdelanto] = useState(0)
@@ -241,7 +243,7 @@ export default function App({ tema, onAlternarTema }: { tema: Tema; onAlternarTe
             <Pacha className="h-10 w-auto" suelo={false} />
             Pacha
           </button>
-          <button type="button" onClick={() => setNavegando(true)} disabled={!datos} className="absolute bottom-7 left-3 z-[500] rounded-full bg-stone-900 px-5 py-3 text-base font-bold text-white shadow-lg ring-2 ring-white disabled:opacity-60">
+          <button type="button" onClick={() => setViajando(true)} className="absolute bottom-7 left-3 z-[500] rounded-full bg-stone-900 px-5 py-3 text-base font-bold text-white shadow-lg ring-2 ring-white disabled:opacity-60">
             Navegar
           </button>
           <button
@@ -322,6 +324,17 @@ export default function App({ tema, onAlternarTema }: { tema: Tema; onAlternarTe
           onCerrar={() => setNavegando(false)}
           onReportar={alElegir}
           onEmergencia={() => setEnEmergencia(true)}
+        />
+      )}
+      {viajando && (
+        <Viaje
+          sinSenal={sinSenal}
+          onCerrar={() => setViajando(false)}
+          onEmergencia={() => setEnEmergencia(true)}
+          onQuebrada={() => {
+            setViajando(false)
+            setNavegando(true)
+          }}
         />
       )}
       {enEmergencia && <Emergencia tramos={datos?.tramos ?? []} onCerrar={() => setEnEmergencia(false)} />}
